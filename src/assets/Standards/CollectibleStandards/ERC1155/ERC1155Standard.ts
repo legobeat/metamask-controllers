@@ -6,17 +6,14 @@ import {
   ERC1155_METADATA_URI_INTERFACE_ID,
   ERC1155_TOKEN_RECEIVER_INTERFACE_ID,
 } from '../../../../constants';
-import {
-  getEthersProvider,
-  getFormattedIpfsUrl,
-  timeoutFetch,
-} from '../../../../util';
+import { getFormattedIpfsUrl, timeoutFetch } from '../../../../util';
+import { StaticWeb3Provider } from '../../../../StaticWeb3Provider';
 
 export class ERC1155Standard {
-  private provider: any;
+  private provider: StaticWeb3Provider;
 
   constructor(provider: any, chainId: number) {
-    this.provider = getEthersProvider(provider, chainId);
+    this.provider = new StaticWeb3Provider(provider, chainId);
   }
 
   /**

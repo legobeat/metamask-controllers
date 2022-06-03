@@ -1,22 +1,19 @@
 import { abiERC721 } from '@metamask/metamask-eth-abis';
 import { Contract } from 'ethers';
-import {
-  getFormattedIpfsUrl,
-  timeoutFetch,
-  getEthersProvider,
-} from '../../../../util';
+import { getFormattedIpfsUrl, timeoutFetch } from '../../../../util';
 import {
   ERC721_INTERFACE_ID,
   ERC721_METADATA_INTERFACE_ID,
   ERC721_ENUMERABLE_INTERFACE_ID,
   ERC721,
 } from '../../../../constants';
+import { StaticWeb3Provider } from '../../../../StaticWeb3Provider';
 
 export class ERC721Standard {
-  private provider: any;
+  private provider: StaticWeb3Provider;
 
   constructor(provider: any, chainId: number) {
-    this.provider = getEthersProvider(provider, chainId);
+    this.provider = new StaticWeb3Provider(provider, chainId);
   }
 
   /**
