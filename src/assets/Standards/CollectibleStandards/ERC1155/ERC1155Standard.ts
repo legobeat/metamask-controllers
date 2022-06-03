@@ -12,8 +12,8 @@ import { StaticWeb3Provider } from '../../../../StaticWeb3Provider';
 export class ERC1155Standard {
   private provider: StaticWeb3Provider;
 
-  constructor(provider: any, chainId: number) {
-    this.provider = new StaticWeb3Provider(provider, chainId);
+  constructor(provider: StaticWeb3Provider) {
+    this.provider = provider;
   }
 
   /**

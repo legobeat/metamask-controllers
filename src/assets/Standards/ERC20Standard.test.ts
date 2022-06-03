@@ -1,10 +1,12 @@
 import HttpProvider from 'ethjs-provider-http';
 import nock from 'nock';
+import { StaticWeb3Provider } from '../../StaticWeb3Provider';
 import { ERC20Standard } from './ERC20Standard';
 
-const MAINNET_PROVIDER = new HttpProvider(
+const MAINNET_PROVIDER_HTTP = new HttpProvider(
   'https://mainnet.infura.io/v3/341eacb578dd44a1a049cbc5f6fd4035',
 );
+const MAINNET_PROVIDER = new StaticWeb3Provider(MAINNET_PROVIDER_HTTP, 1);
 const ERC20_MATIC_ADDRESS = '0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0';
 const MKR_ADDRESS = '0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2';
 
@@ -13,7 +15,7 @@ describe('ERC20Standard', () => {
   nock.disableNetConnect();
 
   beforeAll(() => {
-    erc20Standard = new ERC20Standard(MAINNET_PROVIDER, 1);
+    erc20Standard = new ERC20Standard(MAINNET_PROVIDER);
   });
 
   afterAll(() => {
