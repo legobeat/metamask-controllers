@@ -1,18 +1,22 @@
 import { abiERC1155 } from '@metamask/metamask-eth-abis';
+import { Contract } from 'ethers';
 import {
   ERC1155,
   ERC1155_INTERFACE_ID,
   ERC1155_METADATA_URI_INTERFACE_ID,
   ERC1155_TOKEN_RECEIVER_INTERFACE_ID,
 } from '../../../../constants';
-import { getFormattedIpfsUrl, timeoutFetch } from '../../../../util';
-import { Web3 } from '../../standards-types';
+import {
+  getEthersProvider,
+  getFormattedIpfsUrl,
+  timeoutFetch,
+} from '../../../../util';
 
 export class ERC1155Standard {
-  private web3: Web3;
+  private provider: any;
 
-  constructor(web3: Web3) {
-    this.web3 = web3;
+  constructor(provider: any, chainId: number) {
+    this.provider = getEthersProvider(provider, chainId);
   }
 
   /**
@@ -65,17 +69,8 @@ export class ERC1155Standard {
    * @returns Promise resolving to the 'tokenURI'.
    */
   getTokenURI = async (address: string, tokenId: string): Promise<string> => {
-    const contract = this.web3.eth.contract(abiERC1155).at(address);
-    return new Promise<string>((resolve, reject) => {
-      contract.uri(tokenId, (error: Error, result: string) => {
-        /* istanbul ignore if */
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve(result);
-      });
-    });
+    const contract = new Contract(address, abiERC1155, this.provider);
+    return contract.uri(tokenId);
   };
 
   /**
@@ -91,17 +86,8 @@ export class ERC1155Standard {
     address: string,
     tokenId: string,
   ): Promise<number> => {
-    const contract = this.web3.eth.contract(abiERC1155).at(contractAddress);
-    return new Promise<number>((resolve, reject) => {
-      contract.balanceOf(address, tokenId, (error: Error, result: number) => {
-        /* istanbul ignore if */
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve(result);
-      });
-    });
+    const contract = new Contract(contractAddress, abiERC1155, this.provider);
+    return contract.balanceOf(address, tokenId);
   };
 
   /**
@@ -123,7 +109,7 @@ export class ERC1155Standard {
     id: string,
     value: string,
   ): Promise<void> => {
-    const contract = this.web3.eth.contract(abiERC1155).at(operator);
+    const contract = new Contract(operator, abiERC1155, this.provider);
     return new Promise<void>((resolve, reject) => {
       contract.transferSingle(
         operator,
@@ -154,20 +140,8 @@ export class ERC1155Standard {
     address: string,
     interfaceId: string,
   ): Promise<boolean> => {
-    const contract = this.web3.eth.contract(abiERC1155).at(address);
-    return new Promise<boolean>((resolve, reject) => {
-      contract.supportsInterface(
-        interfaceId,
-        (error: Error, result: boolean) => {
-          /* istanbul ignore if */
-          if (error) {
-            reject(error);
-            return;
-          }
-          resolve(result);
-        },
-      );
-    });
+    const contract = new Contract(address, abiERC1155, this.provider);
+    return contract.supportsInterface(interfaceId);
   };
 
   /**

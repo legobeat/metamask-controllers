@@ -1,4 +1,3 @@
-import Web3 from 'web3';
 import HttpProvider from 'ethjs-provider-http';
 import nock from 'nock';
 import { ERC20Standard } from './ERC20Standard';
@@ -11,12 +10,10 @@ const MKR_ADDRESS = '0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2';
 
 describe('ERC20Standard', () => {
   let erc20Standard: ERC20Standard;
-  let web3: any;
   nock.disableNetConnect();
 
   beforeAll(() => {
-    web3 = new Web3(MAINNET_PROVIDER);
-    erc20Standard = new ERC20Standard(web3);
+    erc20Standard = new ERC20Standard(MAINNET_PROVIDER, 1);
   });
 
   afterAll(() => {
