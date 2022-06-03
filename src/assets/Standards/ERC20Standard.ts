@@ -4,6 +4,7 @@ import { BN, toUtf8 } from 'ethereumjs-util';
 import { StaticWeb3Provider } from '../../StaticWeb3Provider';
 import { ERC20 } from '../../constants';
 import { getEthersProvider } from '../../util';
+import { BigNumber } from '@ethersproject/bignumber';
 
 export class ERC20Standard {
   private provider: StaticWeb3Provider;
@@ -32,7 +33,9 @@ export class ERC20Standard {
    */
   async getTokenDecimals(address: string): Promise<string> {
     const contract = new Contract(address, abiERC20, this.provider);
-    return contract.decimals();
+    return contract
+      .decimals()
+      .then((result: BigNumber | string) => result.toString());
   }
 
   /**

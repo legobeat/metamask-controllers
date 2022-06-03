@@ -6,7 +6,7 @@ const MAINNET_PROVIDER = new HttpProvider(
   'https://mainnet.infura.io/v3/341eacb578dd44a1a049cbc5f6fd4035',
 );
 const ERC20_MATIC_ADDRESS = '0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0';
-const MKR_ADDRESS = '0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2';
+const MKR_ADDRESS = '0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2';
 
 describe('ERC20Standard', () => {
   let erc20Standard: ERC20Standard;
@@ -73,8 +73,6 @@ describe('ERC20Standard', () => {
   it('should support non-standard ERC20 symbols and decimals', async () => {
     nock('https://mainnet.infura.io:443', { encodedQueryParams: true })
       .post('/v3/341eacb578dd44a1a049cbc5f6fd4035', {
-        jsonrpc: '2.0',
-        id: 3,
         method: 'eth_call',
         params: [
           {
@@ -83,6 +81,8 @@ describe('ERC20Standard', () => {
           },
           'latest',
         ],
+        id: 3,
+        jsonrpc: '2.0',
       })
       .reply(200, {
         jsonrpc: '2.0',
@@ -91,8 +91,6 @@ describe('ERC20Standard', () => {
           '0x0000000000000000000000000000000000000000000000000000000000000012',
       })
       .post('/v3/341eacb578dd44a1a049cbc5f6fd4035', {
-        jsonrpc: '2.0',
-        id: 4,
         method: 'eth_call',
         params: [
           {
@@ -101,6 +99,8 @@ describe('ERC20Standard', () => {
           },
           'latest',
         ],
+        id: 4,
+        jsonrpc: '2.0',
       })
       .reply(200, {
         jsonrpc: '2.0',

@@ -27,16 +27,16 @@ describe('ERC721Standard', () => {
   it('should determine if contract supports interface correctly', async () => {
     nock('https://mainnet.infura.io:443', { encodedQueryParams: true })
       .post('/v3/341eacb578dd44a1a049cbc5f6fd4035', {
-        jsonrpc: '2.0',
-        id: 1,
         method: 'eth_call',
         params: [
           {
-            to: '0x06012c8cf97BEaD5deAe237070F9587f8E7A266d',
+            to: '0x06012c8cf97bead5deae237070f9587f8e7a266d',
             data: '0x01ffc9a7780e9d6300000000000000000000000000000000000000000000000000000000',
           },
           'latest',
         ],
+        id: 1,
+        jsonrpc: '2.0',
       })
       .reply(200, {
         jsonrpc: '2.0',
@@ -45,16 +45,16 @@ describe('ERC721Standard', () => {
           '0x0000000000000000000000000000000000000000000000000000000000000000',
       })
       .post('/v3/341eacb578dd44a1a049cbc5f6fd4035', {
-        jsonrpc: '2.0',
-        id: 2,
         method: 'eth_call',
         params: [
           {
-            to: '0x6EbeAf8e8E946F0716E6533A6f2cefc83f60e8Ab',
+            to: '0x6ebeaf8e8e946f0716e6533a6f2cefc83f60e8ab',
             data: '0x01ffc9a7780e9d6300000000000000000000000000000000000000000000000000000000',
           },
           'latest',
         ],
+        id: 2,
+        jsonrpc: '2.0',
       })
       .reply(200, {
         jsonrpc: '2.0',
@@ -62,7 +62,6 @@ describe('ERC721Standard', () => {
         result:
           '0x0000000000000000000000000000000000000000000000000000000000000001',
       });
-
     const CKSupportsEnumerable =
       await erc721Standard.contractSupportsEnumerableInterface(
         CRYPTO_KITTIES_ADDRESS,
@@ -83,7 +82,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0x6EbeAf8e8E946F0716E6533A6f2cefc83f60e8Ab',
+            to: '0x6ebeaf8e8e946f0716e6533a6f2cefc83f60e8ab',
             data: '0x01ffc9a780ac58cd00000000000000000000000000000000000000000000000000000000',
           },
           'latest',
@@ -101,7 +100,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0x6EbeAf8e8E946F0716E6533A6f2cefc83f60e8Ab',
+            to: '0x6ebeaf8e8e946f0716e6533a6f2cefc83f60e8ab',
             data: '0x95d89b41',
           },
           'latest',
@@ -119,7 +118,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0x6EbeAf8e8E946F0716E6533A6f2cefc83f60e8Ab',
+            to: '0x6ebeaf8e8e946f0716e6533a6f2cefc83f60e8ab',
             data: '0x06fdde03',
           },
           'latest',
@@ -153,7 +152,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0x6EbeAf8e8E946F0716E6533A6f2cefc83f60e8Ab',
+            to: '0x6ebeaf8e8e946f0716e6533a6f2cefc83f60e8ab',
             data: '0x01ffc9a780ac58cd00000000000000000000000000000000000000000000000000000000',
           },
           'latest',
@@ -171,7 +170,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0x6EbeAf8e8E946F0716E6533A6f2cefc83f60e8Ab',
+            to: '0x6ebeaf8e8e946f0716e6533a6f2cefc83f60e8ab',
             data: '0x95d89b41',
           },
           'latest',
@@ -191,7 +190,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0x6EbeAf8e8E946F0716E6533A6f2cefc83f60e8Ab',
+            to: '0x6ebeaf8e8e946f0716e6533a6f2cefc83f60e8ab',
             data: '0x06fdde03',
           },
           'latest',
@@ -209,7 +208,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0x6EbeAf8e8E946F0716E6533A6f2cefc83f60e8Ab',
+            to: '0x6ebeaf8e8e946f0716e6533a6f2cefc83f60e8ab',
             data: '0x01ffc9a75b5e139f00000000000000000000000000000000000000000000000000000000',
           },
           'latest',
@@ -227,7 +226,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0x6EbeAf8e8E946F0716E6533A6f2cefc83f60e8Ab',
+            to: '0x6ebeaf8e8e946f0716e6533a6f2cefc83f60e8ab',
             data: '0xc87b56dd0000000000000000000000000000000000000000000000000000000000000004',
           },
           'latest',
@@ -272,7 +271,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D',
+            to: '0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d',
             data: '0x01ffc9a780ac58cd00000000000000000000000000000000000000000000000000000000',
           },
           'latest',
@@ -290,7 +289,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D',
+            to: '0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d',
             data: '0x95d89b41',
           },
           'latest',
@@ -308,7 +307,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D',
+            to: '0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d',
             data: '0x06fdde03',
           },
           'latest',
@@ -326,7 +325,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D',
+            to: '0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d',
             data: '0x01ffc9a75b5e139f00000000000000000000000000000000000000000000000000000000',
           },
           'latest',
@@ -346,7 +345,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D',
+            to: '0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d',
             data: '0xc87b56dd0000000000000000000000000000000000000000000000000000000000000003',
           },
           'latest',
@@ -448,7 +447,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0x06012c8cf97BEaD5deAe237070F9587f8E7A266d',
+            to: '0x06012c8cf97bead5deae237070f9587f8e7a266d',
             data: '0x01ffc9a780ac58cd00000000000000000000000000000000000000000000000000000000',
           },
           'latest',
@@ -475,7 +474,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0xF87E31492Faf9A91B02Ee0dEAAd50d51d56D5d4d',
+            to: '0xf87e31492faf9a91b02ee0deaad50d51d56d5d4d',
             data: '0x01ffc9a780ac58cd00000000000000000000000000000000000000000000000000000000',
           },
           'latest',
@@ -493,7 +492,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0xF87E31492Faf9A91B02Ee0dEAAd50d51d56D5d4d',
+            to: '0xf87e31492faf9a91b02ee0deaad50d51d56d5d4d',
             data: '0x95d89b41',
           },
           'latest',
@@ -511,7 +510,7 @@ describe('ERC721Standard', () => {
         method: 'eth_call',
         params: [
           {
-            to: '0xF87E31492Faf9A91B02Ee0dEAAd50d51d56D5d4d',
+            to: '0xf87e31492faf9a91b02ee0deaad50d51d56d5d4d',
             data: '0x06fdde03',
           },
           'latest',
