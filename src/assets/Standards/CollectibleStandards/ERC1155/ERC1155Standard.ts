@@ -1,12 +1,17 @@
 import { abiERC1155 } from '@metamask/metamask-eth-abis';
 import { Contract } from 'ethers';
+import { BN } from 'ethereumjs-util';
 import {
   ERC1155,
   ERC1155_INTERFACE_ID,
   ERC1155_METADATA_URI_INTERFACE_ID,
   ERC1155_TOKEN_RECEIVER_INTERFACE_ID,
 } from '../../../../constants';
-import { getFormattedIpfsUrl, timeoutFetch } from '../../../../util';
+import {
+  ethersBigNumberToBN,
+  getFormattedIpfsUrl,
+  timeoutFetch,
+} from '../../../../util';
 import { StaticWeb3Provider } from '../../../../StaticWeb3Provider';
 
 export class ERC1155Standard {
@@ -82,9 +87,9 @@ export class ERC1155Standard {
     contractAddress: string,
     address: string,
     tokenId: string,
-  ): Promise<number> => {
+  ): Promise<BN> => {
     const contract = new Contract(contractAddress, abiERC1155, this.provider);
-    return contract.balanceOf(address, tokenId);
+    return contract.balanceOf(address, tokenId).then(ethersBigNumberToBN);
   };
 
   /**

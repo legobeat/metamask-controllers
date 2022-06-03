@@ -1038,7 +1038,7 @@ export class CollectiblesController extends BaseController<
         collectibleAddress,
         collectibleId,
       );
-      return balance > 0;
+      return !balance.isZero();
       // eslint-disable-next-line no-empty
     } catch {
       // Ignore ERC-1155 contract error

@@ -338,7 +338,7 @@ export class AssetsContractController extends BaseController<
     userAddress: string,
     collectibleAddress: string,
     collectibleId: string,
-  ): Promise<number> {
+  ): Promise<BN> {
     if (this.erc1155Standard === undefined) {
       throw new Error(MISSING_PROVIDER_ERROR);
     }

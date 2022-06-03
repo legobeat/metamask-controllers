@@ -14,6 +14,7 @@ import { TYPED_MESSAGE_SCHEMA, typedSignatureHash } from 'eth-sig-util';
 import { validate } from 'jsonschema';
 import { CID } from 'multiformats/cid';
 import deepEqual from 'fast-deep-equal';
+import { BigNumber } from 'ethers';
 import {
   Transaction,
   FetchAllOptions,
@@ -1050,4 +1051,14 @@ function logOrRethrowError(error: any, codesToCatch: number[] = []) {
   } else {
     throw error;
   }
+}
+
+/**
+ * Converts an Ethers BigNumber to a BN.
+ *
+ * @param bigNumber - An Ethers BigNumber instance.
+ * @returns A BN object.
+ */
+export function ethersBigNumberToBN(bigNumber: BigNumber): BN {
+  return new BN(stripHexPrefix(bigNumber.toHexString()), 'hex');
 }
