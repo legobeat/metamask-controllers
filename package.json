@@ -130,7 +130,9 @@
       "eth-sig-util>ethereumjs-util>keccak": true,
       "eth-sig-util>ethereumjs-util>secp256k1": true,
       "ethereumjs-util>ethereum-cryptography>keccak": true,
-      "ethereumjs-util>ethereum-cryptography>secp256k1": true
+      "ethereumjs-util>ethereum-cryptography>secp256k1": true,
+      "web3-provider-engine>ethereumjs-util>keccak": false,
+      "web3-provider-engine>ethereumjs-util>secp256k1": false
     }
   }
 }
