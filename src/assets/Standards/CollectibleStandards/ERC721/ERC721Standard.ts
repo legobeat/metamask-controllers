@@ -1,5 +1,5 @@
 import { abiERC721 } from '@metamask/metamask-eth-abis';
-import { Contract } from 'ethers';
+import { Contract } from '@ethersproject/contracts';
 import { getFormattedIpfsUrl, timeoutFetch } from '../../../../util';
 import {
   ERC721_INTERFACE_ID,

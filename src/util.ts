@@ -14,7 +14,7 @@ import { TYPED_MESSAGE_SCHEMA, typedSignatureHash } from 'eth-sig-util';
 import { validate } from 'jsonschema';
 import { CID } from 'multiformats/cid';
 import deepEqual from 'fast-deep-equal';
-import { BigNumber } from 'ethers';
+import { BigNumber } from '@ethersproject/bignumber';
 import {
   Transaction,
   FetchAllOptions,
