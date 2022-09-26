@@ -44,6 +44,7 @@
     "@ethersproject/abi": "^5.7.0",
     "@ethersproject/bignumber": "^5.7.0",
     "@ethersproject/contracts": "^5.7.0",
+    "@ethersproject/properties": "^5.7.0",
     "@ethersproject/providers": "^5.7.0",
     "@keystonehq/metamask-airgapped-keyring": "^0.6.1",
     "@metamask/contract-metadata": "^1.35.0",

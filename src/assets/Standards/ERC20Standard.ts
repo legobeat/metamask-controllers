@@ -1,10 +1,10 @@
 import { Contract } from '@ethersproject/contracts';
 import { abiERC20 } from '@metamask/metamask-eth-abis';
 import { BN, toUtf8 } from 'ethereumjs-util';
-import { StaticWeb3Provider } from '../../StaticWeb3Provider';
-import { ERC20 } from '../../constants';
 import { BigNumber } from '@ethersproject/bignumber';
 import { AbiCoder } from '@ethersproject/abi';
+import { StaticWeb3Provider } from '../../StaticWeb3Provider';
+import { ERC20 } from '../../constants';
 import { ethersBigNumberToBN } from '../../util';
 
 export class ERC20Standard {

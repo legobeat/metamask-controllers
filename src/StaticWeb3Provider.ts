@@ -1,6 +1,7 @@
 /* istanbul ignore file */
-/* eslint-disable no-eq-null, import/no-extraneous-dependencies, node/no-extraneous-import */
+/* eslint-disable no-eq-null */
 import { Network, Web3Provider } from '@ethersproject/providers';
+import { defineReadOnly } from '@ethersproject/properties';
 
 // Extending Web3Provider and adds a static network detection function
 export class StaticWeb3Provider extends Web3Provider {
@@ -11,6 +12,9 @@ export class StaticWeb3Provider extends Web3Provider {
       network = await super.detectNetwork();
       // If still not set, set it
       if (this._network == null) {
+        // A static network does not support "any"
+        defineReadOnly(this, '_network', network);
+
         this.emit('network', network, null);
       }
     }
