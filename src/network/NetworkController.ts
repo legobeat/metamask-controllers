@@ -86,7 +86,7 @@ export type NetworkControllerStateChangeEvent = {
 
 export type NetworkControllerProviderChangeEvent = {
   type: `NetworkController:providerChange`;
-  payload: [ProviderConfig]; // 'any' is actually 'new NetworkController().provider'
+  payload: [ProviderConfig];
 };
 
 export type NetworkControllerGetProviderConfig = {
@@ -120,6 +120,8 @@ const defaultState: NetworkState = {
   properties: { isEIP1559Compatible: false },
 };
 
+export type TEthQuery = any;
+
 /**
  * Controller that creates and manages an Ethereum network provider
  */
@@ -128,7 +130,7 @@ export class NetworkController extends BaseController<
   NetworkState,
   NetworkControllerMessenger
 > {
-  private ethQuery: any;
+  private ethQuery: TEthQuery;
 
   private internalProviderConfig: ProviderConfig = {} as ProviderConfig;
 
@@ -176,14 +178,14 @@ export class NetworkController extends BaseController<
     );
   }
 
-  private initializeProvider(
+  private async initializeProvider(
     type: NetworkType,
     rpcTarget?: string,
     chainId?: string,
     ticker?: string,
     nickname?: string,
   ) {
-    this.update((state: any) => {
+    this.update((state: NetworkState) => {
       state.isCustomNetwork = this.getIsCustomNetwork(chainId);
     });
 
@@ -205,22 +207,23 @@ export class NetworkController extends BaseController<
       default:
         throw new Error(`Unrecognized network type: '${type}'`);
     }
-    this.getEIP1559Compatibility();
+
+    await this.lookupNetwork();
+    await this.getEIP1559Compatibility();
+
+    this.messagingSystem.publish(
+      `NetworkController:providerChange`,
+      this.state.provider,
+    );
   }
 
-  private refreshNetwork() {
-    this.update((state: any) => {
+  private async refreshNetwork() {
+    this.update((state: NetworkState) => {
       state.network = 'loading';
       state.properties = {};
     });
     const { rpcTarget, type, chainId, ticker } = this.state.provider;
-    this.initializeProvider(type, rpcTarget, chainId, ticker);
-    this.lookupNetwork();
-  }
-
-  private registerProvider() {
-    this.provider.on('error', this.verifyNetwork.bind(this));
-    this.ethQuery = new EthQuery(this.provider);
+    return this.initializeProvider(type, rpcTarget, chainId, ticker);
   }
 
   private setupInfuraProvider(type: NetworkType) {
@@ -275,7 +278,8 @@ export class NetworkController extends BaseController<
   private updateProvider(provider: any) {
     this.safelyStopProvider(this.provider);
     this.provider = provider;
-    this.registerProvider();
+    //this.provider.on('error', this.verifyNetwork.bind(this));
+    this.ethQuery = new EthQuery(this.provider);
   }
 
   private safelyStopProvider(provider: any) {
@@ -285,6 +289,7 @@ export class NetworkController extends BaseController<
   }
 
   private verifyNetwork() {
+    console.log('verify network derp');
     this.state.network === 'loading' && this.lookupNetwork();
   }
 
@@ -292,6 +297,17 @@ export class NetworkController extends BaseController<
    * Ethereum provider object for the current network
    */
   provider: any;
+
+  /**
+   * Sets a new configuration for web3-provider-engine.
+   *
+   * @param providerConfig - The web3-provider-engine configuration.
+   */
+  async setProviderConfig(providerConfig: ProviderConfig) {
+    this.internalProviderConfig = providerConfig;
+    const { type, rpcTarget, chainId, ticker, nickname } = this.state.provider;
+    return this.initializeProvider(type, rpcTarget, chainId, ticker, nickname);
+  }
 
   /**
    * Sets a new configuration for web3-provider-engine.
@@ -304,8 +320,6 @@ export class NetworkController extends BaseController<
     this.internalProviderConfig = providerConfig;
     const { type, rpcTarget, chainId, ticker, nickname } = this.state.provider;
     this.initializeProvider(type, rpcTarget, chainId, ticker, nickname);
-    this.registerProvider();
-    this.lookupNetwork();
   }
 
   get providerConfig() {
@@ -315,31 +329,42 @@ export class NetworkController extends BaseController<
   /**
    * Refreshes the current network code.
    */
-  async lookupNetwork() {
+  async lookupNetwork(): Promise<void> {
     /* istanbul ignore if */
     if (!this.ethQuery || !this.ethQuery.sendAsync) {
       return;
     }
     const releaseLock = await this.mutex.acquire();
-    this.ethQuery.sendAsync(
-      { method: 'net_version' },
-      (error: Error, network: string) => {
-        if (this.state.network === network) {
-          return;
-        }
-
-        this.update((state: any) => {
-          state.network = error ? /* istanbul ignore next*/ 'loading' : network;
-        });
-
-        this.messagingSystem.publish(
-          `NetworkController:providerChange`,
-          this.state.provider,
+    try {
+      const networkId = await new Promise((resolve, reject) => {
+        this.ethQuery.sendAsync(
+          { method: 'net_version' },
+          (error: Error, network: string) => {
+            if (error) { return reject(error); }
+            return resolve(network);
+          },
         );
+      });
 
-        releaseLock();
-      },
-    );
+      if (this.state.network === networkId) {
+        return;
+      }
+
+      this.update((state: NetworkState) => {
+        state.network = networkId;
+      });
+
+      this.messagingSystem.publish(
+        `NetworkController:providerChange`,
+        this.state.provider,
+      );
+    } catch (e) {
+      this.update((state: NetworkState) => {
+        state.network = 'loading';
+      });
+    }
+
+    return releaseLock();
   }
 
   /**
@@ -347,7 +372,7 @@ export class NetworkController extends BaseController<
    *
    * @param type - Human readable network name.
    */
-  setProviderType(type: NetworkType) {
+  async setProviderType(type: NetworkType) {
     // If testnet the ticker symbol should use a testnet prefix
     const ticker =
       type in TESTNET_NETWORK_TYPE_TO_TICKER_SYMBOL &&
@@ -355,12 +380,12 @@ export class NetworkController extends BaseController<
         ? TESTNET_NETWORK_TYPE_TO_TICKER_SYMBOL[type]
         : 'ETH';
 
-    this.update((state: any) => {
+    this.update((state: NetworkState) => {
       state.provider.type = type;
       state.provider.ticker = ticker;
       state.provider.chainId = NetworksChainId[type];
     });
-    this.refreshNetwork();
+    return this.refreshNetwork();
   }
 
   /**
@@ -371,50 +396,54 @@ export class NetworkController extends BaseController<
    * @param ticker - The currency ticker.
    * @param nickname - Personalized network name.
    */
-  setRpcTarget(
+  async setRpcTarget(
     rpcTarget: string,
     chainId: string,
     ticker?: string,
     nickname?: string,
   ) {
-    this.update((state: any) => {
+    this.update((state: NetworkState) => {
       state.provider.type = RPC;
       state.provider.rpcTarget = rpcTarget;
       state.provider.chainId = chainId;
       state.provider.ticker = ticker;
       state.provider.nickname = nickname;
     });
-    this.refreshNetwork();
+    return this.refreshNetwork();
   }
 
-  getEIP1559Compatibility() {
+  async getEIP1559Compatibility(): Promise<boolean> {
     const { properties = {} } = this.state;
 
     if (!properties.isEIP1559Compatible) {
       if (typeof this.ethQuery?.sendAsync !== 'function') {
-        return Promise.resolve(true);
+        return true;
       }
-      return new Promise((resolve, reject) => {
+
+      const latestBlock: Block = await new Promise((resolve, reject) => {
         this.ethQuery.sendAsync(
           { method: 'eth_getBlockByNumber', params: ['latest', false] },
           (error: Error, block: Block) => {
-            if (error) {
-              reject(error);
-            } else {
-              const isEIP1559Compatible =
-                typeof block.baseFeePerGas !== 'undefined';
-              if (properties.isEIP1559Compatible !== isEIP1559Compatible) {
-                this.update((state: any) => {
-                  state.properties.isEIP1559Compatible = isEIP1559Compatible;
-                });
-              }
-              resolve(isEIP1559Compatible);
-            }
+            if (error) { return reject(error); }
+            return resolve(block);
           },
         );
       });
+
+      const usesBaseFee = typeof latestBlock.baseFeePerGas !== 'undefined';
+      if (properties.isEIP1559Compatible !== usesBaseFee) {
+        this.update((state: NetworkState) => {
+          if (state.properties === undefined) {
+            state.properties = {};
+          }
+          state.properties.isEIP1559Compatible = usesBaseFee;
+        });
+      }
+
+      return true;
     }
-    return Promise.resolve(true);
+
+    return false;
   }
 }
 
