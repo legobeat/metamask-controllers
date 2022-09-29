@@ -69,7 +69,7 @@
     "single-call-balance-checker-abi": "^1.0.0",
     "uuid": "^8.3.2",
     "web3": "^0.20.7",
-    "web3-provider-engine": "^16.0.3"
+    "web3-provider-engine": "git+https://github.com/legobeat/web3-provider-engine.git#c6bb85452d874a4ea435ce5034b93d7d5039969b"
   },
   "devDependencies": {
     "@keystonehq/bc-ur-registry-eth": "^0.9.0",
