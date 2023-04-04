@@ -35,6 +35,37 @@ function msgHexToText(hex: string): string {
 }
 
 /**
+ * @type WrappedSIWERequest
+ *
+ * Sign-In With Ethereum (SIWE)(EIP-4361) message with request metadata
+ * @property {string} from - Subject account address
+ * @property {string} origin - The RFC 3986 originating authority of the signing request, including scheme
+ * @property {ParsedMessage} siwe - The data parsed from the message
+ */
+export interface WrappedSIWERequest {
+  from: string;
+  origin: string;
+  siwe: ParsedMessage;
+}
+
+/**
+ * Validates origin of a Sign-In With Ethereum (SIWE)(EIP-4361) request.
+ *
+ * @param req - Signature request
+ * @returns true if origin matches domain; false otherwise
+ */
+export const isValidSIWEOrigin = (req: WrappedSIWERequest): boolean => {
+  const { origin, siwe } = req;
+  let isSIWEDomainValid = false;
+  if (origin) {
+    const { host } = new URL(origin);
+    // TODO: fix domain validation
+    isSIWEDomainValid = siwe.domain === host;
+  }
+  return isSIWEDomainValid;
+};
+
+/**
  * A locally defined object used to provide data to identify a Sign-In With Ethereum (SIWE)(EIP-4361) message and provide the parsed message
  *
  * @typedef localSIWEObject
