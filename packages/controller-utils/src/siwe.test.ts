@@ -54,23 +54,39 @@ describe('siwe', () => {
           },
           {
             domain: 'example.com',
+            origin: 'http://example.com',
+          },
+          {
+            domain: 'example.com',
+            origin: 'https://example.com:443',
+          },
+          {
+            domain: 'example.com',
+            origin: 'http://example.com:80',
+          },
+          {
+            domain: 'example.com',
             origin: 'https://user:password@example.com',
           },
-          /*
+          {
+            domain: 'example.com',
+            origin: 'https://user@example.com',
+          },
           {
             domain: 'example.com',
             origin: 'http://user:password@example.com:8090',
           },
-          */
-          /*
+          {
+            domain: 'example.com',
+            origin: 'http://user@example.com:8090',
+          },
           {
             domain: 'example.com',
             origin: 'http://example.com:8090',
           },
-          */
           {
             domain: 'example.com',
-            origin: 'https://example.com:443',
+            origin: 'https://example.com:8090',
           },
         ],
       },
@@ -78,36 +94,30 @@ describe('siwe', () => {
         name: 'matching domain and port',
         expected: true,
         cases: [
-          /*
           {
             domain: 'example.com:443',
             origin: 'https://example.com:443',
           },
-          */
-          /*
           {
             domain: 'example.com:443',
             origin: 'https://example.com',
           },
-          */
-          /*
           {
             domain: 'example.com:443',
-            origin: 'https://example.com:443',
+            origin: 'http://example.com:443',
           },
-          */
-          /*
           {
             domain: 'example.com:80',
             origin: 'http://example.com',
           },
-          */
-          /*
           {
             domain: 'example.com:80',
             origin: 'http://example.com:80',
           },
-          */
+          {
+            domain: 'example.com:80',
+            origin: 'https://example.com:80',
+          },
           {
             domain: 'example.com:8090',
             origin: 'http://example.com:8090',
@@ -122,8 +132,6 @@ describe('siwe', () => {
         name: 'matching userinfo',
         expected: true,
         cases: [
-          // TODO: These should pass
-          /*
           {
             domain: 'alice@example.com',
             origin: 'https://alice:password@example.com',
@@ -136,7 +144,6 @@ describe('siwe', () => {
             domain: 'alice@example.com:8090',
             origin: 'https://alice@example.com:8090',
           },
-          */
         ],
       },
       {
@@ -170,6 +177,18 @@ describe('siwe', () => {
             origin: 'http://example.com',
           },
           {
+            domain: 'example.com',
+            origin: 'http://www.example.com',
+          },
+          {
+            domain: 'example.com',
+            origin: 'https://foo.example.com',
+          },
+          {
+            domain: 'foo.example.com',
+            origin: 'https://example.com',
+          },
+          {
             domain: 'localhost',
             origin: 'http://127.0.0.1',
           },
@@ -200,8 +219,20 @@ describe('siwe', () => {
             origin: 'https://127.0.0.1',
           },
           {
-            domain: '127.0.0.1:8090',
+            domain: 'localhost:8090',
             origin: 'http://localhost',
+          },
+          {
+            domain: '127.0.0.1:8090',
+            origin: 'https://localhost',
+          },
+          {
+            domain: 'example.com:443',
+            origin: 'http://example.com',
+          },
+          {
+            domain: 'example.com:80',
+            origin: 'https://example.com',
           },
         ],
       },
