@@ -247,8 +247,11 @@ describe('siwe', () => {
             from: '0x0',
             origin,
             siwe: {
-              ...msg,
-              domain,
+              isSIWEMessage: true,
+              parsedMessage: {
+                ...msg,
+                domain,
+              },
             },
           });
           expect(result).toBe(expected);

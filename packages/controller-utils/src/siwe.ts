@@ -45,7 +45,7 @@ function msgHexToText(hex: string): string {
 export interface WrappedSIWERequest {
   from: string;
   origin: string;
-  siwe: ParsedMessage;
+  siwe: SIWEMessage;
 }
 
 interface HostParts extends DomainParts {
@@ -128,14 +128,13 @@ export const isValidSIWEOrigin = (req: WrappedSIWERequest): boolean => {
 
   // origin = scheme://[user[:password]@]domain[:port]
   // origin is supplied by environment and must match domain claim in message
-  //
-  // TOREVIEW: Handle error and log here instead of propagating?
-  if (!origin) {
+  if (!origin || !siwe?.parsedMessage?.domain) {
     return false;
   }
 
+  // TOREVIEW: Handle error and log here instead of propagating?
   const originParts = parseAuthorityParts(origin);
-  const domainParts = parseDomainParts(siwe.domain);
+  const domainParts = parseDomainParts(siwe.parsedMessage.domain);
 
   if (domainParts.host !== originParts.host) {
     return false;
@@ -158,7 +157,7 @@ export const isValidSIWEOrigin = (req: WrappedSIWERequest): boolean => {
 /**
  * A locally defined object used to provide data to identify a Sign-In With Ethereum (SIWE)(EIP-4361) message and provide the parsed message
  *
- * @typedef localSIWEObject
+ * @typedef SIWEMessage
  * @param {boolean} isSIWEMessage - Does the intercepted message conform to the SIWE specification?
  * @param {ParsedMessage} parsedMessage - The data parsed out of the message
  */
