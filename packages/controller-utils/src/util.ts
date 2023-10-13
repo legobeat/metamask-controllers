@@ -1,4 +1,5 @@
 import {
+  GWEI_TO_WEI,
   addHexPrefix,
   isValidAddress,
   isHexString,
@@ -9,7 +10,6 @@ import type EthQuery from '@metamask/eth-query';
 import type { Hex, Json } from '@metamask/utils';
 import { isStrictHexString } from '@metamask/utils';
 import ensNamehash from 'eth-ens-namehash';
-import { fromWei, toWei } from 'ethjs-unit';
 import deepEqual from 'fast-deep-equal';
 
 import { MAX_SAFE_CHAIN_ID } from './constants';
@@ -79,21 +79,21 @@ export function gweiDecToWeiBigInt(n: number | string): bigint {
   let decimalPart = parts[1] || '';
 
   if (!decimalPart) {
-    return toWei(wholePart, 'gwei');
+    return BigInt(wholePart) * GWEI_TO_WEI;
   }
 
   if (decimalPart.length <= 9) {
-    return toWei(`${wholePart}.${decimalPart}`, 'gwei');
+    return BigInt(`${wholePart}${decimalPart.padEnd(9, '0')}`);
   }
 
   const decimalPartToRemove = decimalPart.slice(9);
   const decimalRoundingDigit = decimalPartToRemove[0];
 
   decimalPart = decimalPart.slice(0, 9);
-  let wei = toWei(`${wholePart}.${decimalPart}`, 'gwei');
+  let wei = BigInt(`${wholePart}${decimalPart}`);
 
   if (Number(decimalRoundingDigit) >= 5) {
-    wei = wei.add(BigInt(1));
+    wei = wei + BigInt(1);
   }
 
   return wei;
@@ -107,7 +107,7 @@ export function gweiDecToWeiBigInt(n: number | string): bigint {
  */
 export function weiHexToGweiDec(hex: string) {
   const hexWei = BigInt(addHexPrefix(hex));
-  return fromWei(hexWei, 'gwei').toString(10);
+  return (hexWei / GWEI_TO_WEI).toString(10);
 }
 
 /**
