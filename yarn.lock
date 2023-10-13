@@ -1300,6 +1300,7 @@ __metadata:
     "@metamask/snaps-controllers": ^3.0.0
     "@metamask/snaps-utils": ^3.0.0
     "@metamask/utils": ^8.1.0
+    "@noble/hashes": ^1.3.2
     "@types/jest": ^27.4.1
     "@types/readable-stream": ^2.3.0
     deepmerge: ^4.2.2
@@ -2591,7 +2592,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@noble/hashes@npm:^1.0.0, @noble/hashes@npm:^1.3.1, @noble/hashes@npm:~1.3.0, @noble/hashes@npm:~1.3.1":
+"@noble/hashes@npm:^1.0.0, @noble/hashes@npm:^1.3.1, @noble/hashes@npm:^1.3.2, @noble/hashes@npm:~1.3.0, @noble/hashes@npm:~1.3.1":
   version: 1.3.2
   resolution: "@noble/hashes@npm:1.3.2"
   checksum: fe23536b436539d13f90e4b9be843cc63b1b17666a07634a2b1259dded6f490be3d050249e6af98076ea8f2ea0d56f578773c2197f2aa0eeaa5fba5bc18ba474
