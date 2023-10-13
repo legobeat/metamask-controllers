@@ -187,13 +187,9 @@ export function toHex(value: number | string | bigint): Hex {
     return value;
   }
   const hexString =
-    (typeof value === 'bigint'
-      ? value
-      : BigInt((typeof value === 'number'
-          ? Math.floor(value)
-          : value
-        ).toString())
-    ).toString(16);
+    typeof value === 'bigint'
+      ? value.toString(16)
+      : BigInt(value.toString()).toString(16);
   return `0x${hexString}`;
 }
 
