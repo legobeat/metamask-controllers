@@ -1,3 +1,4 @@
+import { BN, stripHexPrefix } from '@ethereumjs/util';
 import { isAddress } from '@ethersproject/address';
 import type { AddApprovalRequest } from '@metamask/approval-controller';
 import type {
@@ -27,7 +28,6 @@ import type { PreferencesState } from '@metamask/preferences-controller';
 import { rpcErrors } from '@metamask/rpc-errors';
 import type { Hex } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
-import { BN, stripHexPrefix } from 'ethereumjs-util';
 import { EventEmitter } from 'events';
 import { v4 as random } from 'uuid';
 

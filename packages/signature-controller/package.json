@@ -29,6 +29,7 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
+    "@ethereumjs/util": "^8.1.0",
     "@metamask/approval-controller": "^4.0.1",
     "@metamask/base-controller": "^3.2.3",
     "@metamask/controller-utils": "^5.0.2",
@@ -36,7 +37,6 @@
     "@metamask/message-manager": "^7.3.5",
     "@metamask/rpc-errors": "^6.1.0",
     "@metamask/utils": "^8.1.0",
-    "ethereumjs-util": "^7.0.10",
     "immer": "^9.0.6",
     "lodash": "^4.17.21"
   },

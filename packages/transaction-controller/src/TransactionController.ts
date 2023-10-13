@@ -1,6 +1,7 @@
 import { Hardfork, Common, type ChainConfig } from '@ethereumjs/common';
 import type { TypedTransaction } from '@ethereumjs/tx';
 import { TransactionFactory } from '@ethereumjs/tx';
+import { addHexPrefix, bufferToHex } from '@ethereumjs/util';
 import type {
   AcceptResultCallbacks,
   AddApprovalRequest,
@@ -33,7 +34,6 @@ import { errorCodes, rpcErrors, providerErrors } from '@metamask/rpc-errors';
 import type { Hex } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
 import MethodRegistry from 'eth-method-registry';
-import { addHexPrefix, bufferToHex } from 'ethereumjs-util';
 import { EventEmitter } from 'events';
 import { merge, pickBy } from 'lodash';
 import NonceTracker from 'nonce-tracker';

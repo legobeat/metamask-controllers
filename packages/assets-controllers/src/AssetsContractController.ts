@@ -1,3 +1,4 @@
+import type { BN } from '@ethereumjs/util';
 import { Contract } from '@ethersproject/contracts';
 import { Web3Provider } from '@ethersproject/providers';
 import type { BaseConfig, BaseState } from '@metamask/base-controller';
@@ -10,7 +11,6 @@ import type {
 } from '@metamask/network-controller';
 import type { PreferencesState } from '@metamask/preferences-controller';
 import type { Hex } from '@metamask/utils';
-import type { BN } from 'ethereumjs-util';
 import abiSingleCallBalancesContract from 'single-call-balance-checker-abi';
 
 import { SupportedTokenDetectionNetworks } from './assetsUtil';

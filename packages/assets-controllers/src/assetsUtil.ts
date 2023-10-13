@@ -1,3 +1,4 @@
+import { BN, stripHexPrefix } from '@ethereumjs/util';
 import type { BigNumber } from '@ethersproject/bignumber';
 import {
   convertHexToDecimal,
@@ -6,7 +7,6 @@ import {
 } from '@metamask/controller-utils';
 import { rpcErrors } from '@metamask/rpc-errors';
 import type { Hex } from '@metamask/utils';
-import { BN, stripHexPrefix } from 'ethereumjs-util';
 import { CID } from 'multiformats/cid';
 
 import type { Nft, NftMetadata } from './NftController';

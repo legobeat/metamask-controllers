@@ -1,3 +1,4 @@
+import { BN } from '@ethereumjs/util';
 import type { Network } from '@ethersproject/providers';
 import type {
   AddApprovalRequest,
@@ -24,7 +25,6 @@ import type {
 } from '@metamask/network-controller';
 import { defaultState as defaultNetworkState } from '@metamask/network-controller';
 import { PreferencesController } from '@metamask/preferences-controller';
-import { BN } from 'ethereumjs-util';
 import HttpProvider from 'ethjs-provider-http';
 import nock from 'nock';
 import * as sinon from 'sinon';

@@ -1,4 +1,4 @@
-import { BN } from 'ethereumjs-util';
+import { BN } from '@ethereumjs/util';
 import nock from 'nock';
 
 import { MAX_SAFE_CHAIN_ID } from './constants';

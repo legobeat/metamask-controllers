@@ -1,8 +1,8 @@
+import { BN } from '@ethereumjs/util';
 import type { BaseConfig, BaseState } from '@metamask/base-controller';
 import { BaseController } from '@metamask/base-controller';
 import { safelyExecute } from '@metamask/controller-utils';
 import type { PreferencesState } from '@metamask/preferences-controller';
-import { BN } from 'ethereumjs-util';
 
 import type { AssetsContractController } from './AssetsContractController';
 import type { Token } from './TokenRatesController';

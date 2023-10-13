@@ -1,3 +1,4 @@
+import type { BN } from '@ethereumjs/util';
 import { Contract } from '@ethersproject/contracts';
 import type { Web3Provider } from '@ethersproject/providers';
 import {
@@ -8,7 +9,6 @@ import {
   timeoutFetch,
 } from '@metamask/controller-utils';
 import { abiERC1155 } from '@metamask/metamask-eth-abis';
-import type { BN } from 'ethereumjs-util';
 
 import { getFormattedIpfsUrl, ethersBigNumberToBN } from '../../../assetsUtil';
 

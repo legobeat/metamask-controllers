@@ -1,9 +1,9 @@
+import { BN } from '@ethereumjs/util';
 import { ControllerMessenger } from '@metamask/base-controller';
 import { toHex } from '@metamask/controller-utils';
 import type { NetworkControllerMessenger } from '@metamask/network-controller';
 import { NetworkController } from '@metamask/network-controller';
 import { PreferencesController } from '@metamask/preferences-controller';
-import { BN } from 'ethereumjs-util';
 import * as sinon from 'sinon';
 
 import { AssetsContractController } from './AssetsContractController';

@@ -1,3 +1,4 @@
+import { bufferToHex } from '@ethereumjs/util';
 import type {
   AddApprovalRequest,
   AcceptResultCallbacks,
@@ -42,7 +43,6 @@ import {
 } from '@metamask/message-manager';
 import { providerErrors, rpcErrors } from '@metamask/rpc-errors';
 import type { Hex, Json } from '@metamask/utils';
-import { bufferToHex } from 'ethereumjs-util';
 import EventEmitter from 'events';
 import type { Patch } from 'immer';
 import { cloneDeep } from 'lodash';

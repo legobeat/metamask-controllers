@@ -1,3 +1,4 @@
+import { sha256FromString } from '@ethereumjs/util';
 import type { RestrictedControllerMessenger } from '@metamask/base-controller';
 import { BaseControllerV2 } from '@metamask/base-controller';
 import { SnapKeyring } from '@metamask/eth-snap-keyring';
@@ -16,7 +17,6 @@ import type {
 } from '@metamask/snaps-controllers';
 import type { Snap, ValidatedSnapId } from '@metamask/snaps-utils';
 import type { Keyring, Json } from '@metamask/utils';
-import { sha256FromString } from 'ethereumjs-util';
 import type { Patch } from 'immer';
 import { v4 as uuid } from 'uuid';
 

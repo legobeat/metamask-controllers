@@ -29,6 +29,7 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
+    "@ethereumjs/util": "^8.1.0",
     "@keystonehq/metamask-airgapped-keyring": "^0.13.1",
     "@metamask/base-controller": "^3.2.3",
     "@metamask/eth-keyring-controller": "^13.0.1",
@@ -36,7 +37,6 @@
     "@metamask/preferences-controller": "^4.4.3",
     "@metamask/utils": "^8.1.0",
     "async-mutex": "^0.2.6",
-    "ethereumjs-util": "^7.0.10",
     "ethereumjs-wallet": "^1.0.1",
     "immer": "^9.0.6"
   },

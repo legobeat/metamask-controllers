@@ -1,5 +1,6 @@
 import { Chain, Common, Hardfork } from '@ethereumjs/common';
 import { TransactionFactory } from '@ethereumjs/tx';
+import { bufferToHex } from '@ethereumjs/util';
 import { CryptoHDKey, ETHSignature } from '@keystonehq/bc-ur-registry-eth';
 import { MetaMaskKeyring as QRKeyring } from '@keystonehq/metamask-airgapped-keyring';
 import { ControllerMessenger } from '@metamask/base-controller';
@@ -18,7 +19,6 @@ import {
   type Keyring,
   type Json,
 } from '@metamask/utils';
-import { bufferToHex } from 'ethereumjs-util';
 import * as sinon from 'sinon';
 import * as uuid from 'uuid';
 

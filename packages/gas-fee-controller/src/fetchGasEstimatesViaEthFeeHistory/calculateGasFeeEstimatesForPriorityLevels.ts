@@ -1,5 +1,5 @@
+import { BN } from '@ethereumjs/util';
 import { GWEI } from '@metamask/controller-utils';
-import { BN } from 'ethereumjs-util';
 import { fromWei } from 'ethjs-unit';
 
 import type { FeeHistoryBlock } from '../fetchBlockFeeHistory';

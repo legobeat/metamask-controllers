@@ -1,7 +1,3 @@
-import type EthQuery from '@metamask/eth-query';
-import type { Hex, Json } from '@metamask/utils';
-import { isStrictHexString } from '@metamask/utils';
-import ensNamehash from 'eth-ens-namehash';
 import {
   addHexPrefix,
   isValidAddress,
@@ -9,7 +5,11 @@ import {
   BN,
   toChecksumAddress,
   stripHexPrefix,
-} from 'ethereumjs-util';
+} from '@ethereumjs/util';
+import type EthQuery from '@metamask/eth-query';
+import type { Hex, Json } from '@metamask/utils';
+import { isStrictHexString } from '@metamask/utils';
+import ensNamehash from 'eth-ens-namehash';
 import { fromWei, toWei } from 'ethjs-unit';
 import deepEqual from 'fast-deep-equal';
 

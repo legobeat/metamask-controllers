@@ -1291,6 +1291,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@metamask/accounts-controller@workspace:packages/accounts-controller"
   dependencies:
+    "@ethereumjs/util": ^8.1.0
     "@metamask/auto-changelog": ^3.1.0
     "@metamask/base-controller": ^3.2.3
     "@metamask/eth-snap-keyring": ^1.0.0
@@ -1302,7 +1303,6 @@ __metadata:
     "@types/jest": ^27.4.1
     "@types/readable-stream": ^2.3.0
     deepmerge: ^4.2.2
-    ethereumjs-util: ^7.0.10
     immer: ^9.0.6
     jest: ^27.5.1
     ts-jest: ^27.1.4
@@ -1399,6 +1399,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@metamask/assets-controllers@workspace:packages/assets-controllers"
   dependencies:
+    "@ethereumjs/util": ^8.1.0
     "@ethersproject/address": ^5.7.0
     "@ethersproject/bignumber": ^5.7.0
     "@ethersproject/contracts": ^5.7.0
@@ -1421,7 +1422,6 @@ __metadata:
     "@types/uuid": ^8.3.0
     async-mutex: ^0.2.6
     deepmerge: ^4.2.2
-    ethereumjs-util: ^7.0.10
     ethjs-provider-http: ^0.1.6
     immer: ^9.0.6
     jest: ^27.5.1
@@ -1511,6 +1511,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@metamask/controller-utils@workspace:packages/controller-utils"
   dependencies:
+    "@ethereumjs/util": ^8.1.0
     "@metamask/auto-changelog": ^3.1.0
     "@metamask/eth-query": ^3.0.1
     "@metamask/utils": ^8.1.0
@@ -1518,7 +1519,6 @@ __metadata:
     "@types/jest": ^27.4.1
     deepmerge: ^4.2.2
     eth-ens-namehash: ^2.0.8
-    ethereumjs-util: ^7.0.10
     ethjs-unit: ^0.1.6
     fast-deep-equal: ^3.1.3
     jest: ^27.5.1
@@ -1815,6 +1815,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@metamask/gas-fee-controller@workspace:packages/gas-fee-controller"
   dependencies:
+    "@ethereumjs/util": ^8.1.0
     "@metamask/auto-changelog": ^3.1.0
     "@metamask/base-controller": ^3.2.3
     "@metamask/controller-utils": ^5.0.2
@@ -1826,7 +1827,6 @@ __metadata:
     "@types/jest-when": ^2.7.3
     "@types/uuid": ^8.3.0
     deepmerge: ^4.2.2
-    ethereumjs-util: ^7.0.10
     ethjs-unit: ^0.1.6
     immer: ^9.0.6
     jest: ^27.5.1
@@ -1890,6 +1890,7 @@ __metadata:
   dependencies:
     "@ethereumjs/common": ^3.2.0
     "@ethereumjs/tx": ^4.2.0
+    "@ethereumjs/util": ^8.1.0
     "@keystonehq/bc-ur-registry-eth": ^0.9.0
     "@keystonehq/metamask-airgapped-keyring": ^0.13.1
     "@metamask/auto-changelog": ^3.1.0
@@ -1903,7 +1904,6 @@ __metadata:
     "@types/jest": ^27.4.1
     async-mutex: ^0.2.6
     deepmerge: ^4.2.2
-    ethereumjs-util: ^7.0.10
     ethereumjs-wallet: ^1.0.1
     immer: ^9.0.6
     jest: ^27.5.1
@@ -1940,6 +1940,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@metamask/message-manager@workspace:packages/message-manager"
   dependencies:
+    "@ethereumjs/util": ^8.1.0
     "@metamask/auto-changelog": ^3.1.0
     "@metamask/base-controller": ^3.2.3
     "@metamask/controller-utils": ^5.0.2
@@ -1948,7 +1949,6 @@ __metadata:
     "@types/jest": ^27.4.1
     "@types/uuid": ^8.3.0
     deepmerge: ^4.2.2
-    ethereumjs-util: ^7.0.10
     jest: ^27.5.1
     jsonschema: ^1.2.4
     ts-jest: ^27.1.4
@@ -2326,6 +2326,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@metamask/signature-controller@workspace:packages/signature-controller"
   dependencies:
+    "@ethereumjs/util": ^8.1.0
     "@metamask/approval-controller": ^4.0.1
     "@metamask/auto-changelog": ^3.1.0
     "@metamask/base-controller": ^3.2.3
@@ -2337,7 +2338,6 @@ __metadata:
     "@metamask/utils": ^8.1.0
     "@types/jest": ^27.4.1
     deepmerge: ^4.2.2
-    ethereumjs-util: ^7.0.10
     immer: ^9.0.6
     jest: ^27.5.1
     lodash: ^4.17.21
@@ -2461,6 +2461,7 @@ __metadata:
   dependencies:
     "@ethereumjs/common": ^3.2.0
     "@ethereumjs/tx": ^4.2.0
+    "@ethereumjs/util": ^8.1.0
     "@ethersproject/abi": ^5.7.0
     "@metamask/approval-controller": ^4.0.1
     "@metamask/auto-changelog": ^3.1.0
@@ -2477,7 +2478,6 @@ __metadata:
     babel-runtime: ^6.26.0
     deepmerge: ^4.2.2
     eth-method-registry: 1.1.0
-    ethereumjs-util: ^7.0.10
     ethjs-provider-http: ^0.1.6
     fast-json-patch: ^3.1.1
     jest: ^27.5.1
@@ -5230,7 +5230,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ethereumjs-util@npm:^7.0.10, ethereumjs-util@npm:^7.0.8, ethereumjs-util@npm:^7.1.2":
+"ethereumjs-util@npm:^7.0.8, ethereumjs-util@npm:^7.1.2":
   version: 7.1.5
   resolution: "ethereumjs-util@npm:7.1.5"
   dependencies:

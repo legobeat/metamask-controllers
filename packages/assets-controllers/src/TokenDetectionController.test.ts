@@ -1,3 +1,4 @@
+import { BN } from '@ethereumjs/util';
 import { ControllerMessenger } from '@metamask/base-controller';
 import {
   ChainId,
@@ -13,7 +14,6 @@ import type {
   ProviderConfig,
 } from '@metamask/network-controller';
 import { PreferencesController } from '@metamask/preferences-controller';
-import { BN } from 'ethereumjs-util';
 import nock from 'nock';
 import * as sinon from 'sinon';
 

@@ -1,3 +1,4 @@
+import { BN } from '@ethereumjs/util';
 import {
   query,
   handleFetch,
@@ -5,7 +6,6 @@ import {
   weiHexToGweiDec,
 } from '@metamask/controller-utils';
 import type EthQuery from '@metamask/eth-query';
-import { BN } from 'ethereumjs-util';
 
 import type {
   GasFeeEstimates,

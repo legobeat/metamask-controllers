@@ -1,4 +1,4 @@
-import { BN } from 'ethereumjs-util';
+import { BN } from '@ethereumjs/util';
 import { when } from 'jest-when';
 
 import fetchBlockFeeHistory from './fetchBlockFeeHistory';
