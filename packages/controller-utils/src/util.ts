@@ -107,7 +107,7 @@ export function gweiDecToWeiBigInt(n: number | string): bigint {
  */
 export function weiHexToGweiDec(hex: string) {
   const hexWei = BigInt(addHexPrefix(hex));
-  return (hexWei / GWEI_TO_WEI).toString(10);
+  return (Number(hexWei) / Number(GWEI_TO_WEI)).toString(10);
 }
 
 /**
