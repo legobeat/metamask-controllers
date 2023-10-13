@@ -1,4 +1,3 @@
-import type { BN } from '@ethereumjs/util';
 import { Contract } from '@ethersproject/contracts';
 import { Web3Provider } from '@ethersproject/providers';
 import type { BaseConfig, BaseState } from '@metamask/base-controller';
@@ -63,7 +62,7 @@ export interface AssetsContractConfig extends BaseConfig {
  * @property [tokenAddress] - Address of the token
  */
 export interface BalanceMap {
-  [tokenAddress: string]: BN;
+  [tokenAddress: string]: bigint;
 }
 
 /**
@@ -218,13 +217,13 @@ export class AssetsContractController extends BaseController<
    * @param address - Asset ERC20 contract address.
    * @param selectedAddress - Current account public address.
    * @param networkClientId - Network Client ID to fetch the provider with.
-   * @returns Promise resolving to BN object containing balance for current account on specific asset contract.
+   * @returns Promise resolving to BigInt value containing balance for current account on specific asset contract.
    */
   async getERC20BalanceOf(
     address: string,
     selectedAddress: string,
     networkClientId?: NetworkClientId,
-  ): Promise<BN> {
+  ): Promise<bigint> {
     const erc20Standard = this.getERC20Standard(networkClientId);
     return erc20Standard.getBalanceOf(address, selectedAddress);
   }
@@ -298,7 +297,7 @@ export class AssetsContractController extends BaseController<
     symbol?: string | undefined;
     name?: string | undefined;
     decimals?: string | undefined;
-    balance?: BN | undefined;
+    balance?: bigint | undefined;
   }> {
     // Asserts provider is available
     this.getProvider(networkClientId);
@@ -441,7 +440,7 @@ export class AssetsContractController extends BaseController<
     nftAddress: string,
     nftId: string,
     networkClientId?: NetworkClientId,
-  ): Promise<BN> {
+  ): Promise<bigint> {
     const erc1155Standard = this.getERC1155Standard(networkClientId);
     return erc1155Standard.getBalanceOf(nftAddress, userAddress, nftId);
   }
@@ -507,7 +506,7 @@ export class AssetsContractController extends BaseController<
     /* istanbul ignore else */
     if (result.length > 0) {
       tokensToDetect.forEach((tokenAddress, index) => {
-        const balance: BN = result[index];
+        const balance: bigint = result[index];
         /* istanbul ignore else */
         if (String(balance) !== '0') {
           nonZeroBalances[tokenAddress] = balance;

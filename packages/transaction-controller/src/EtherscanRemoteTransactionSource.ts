@@ -1,4 +1,3 @@
-import { BN } from '@ethereumjs/util';
 import { BNToHex } from '@metamask/controller-utils';
 import type { Hex } from '@metamask/utils';
 import { v1 as random } from 'uuid';
@@ -170,12 +169,12 @@ export class EtherscanRemoteTransactionSource
       txParams: {
         chainId: currentChainId,
         from: txMeta.from,
-        gas: BNToHex(new BN(txMeta.gas)),
-        gasPrice: BNToHex(new BN(txMeta.gasPrice)),
-        gasUsed: BNToHex(new BN(txMeta.gasUsed)),
-        nonce: BNToHex(new BN(txMeta.nonce)),
+        gas: BNToHex(BigInt(txMeta.gas)),
+        gasPrice: BNToHex(BigInt(txMeta.gasPrice)),
+        gasUsed: BNToHex(BigInt(txMeta.gasUsed)),
+        nonce: BNToHex(BigInt(txMeta.nonce)),
         to: txMeta.to,
-        value: BNToHex(new BN(txMeta.value)),
+        value: BNToHex(BigInt(txMeta.value)),
       },
       verifiedOnBlockchain: false,
     };

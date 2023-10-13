@@ -1,4 +1,3 @@
-import { BN } from '@ethereumjs/util';
 import { GWEI } from '@metamask/controller-utils';
 import { fromWei } from 'ethjs-unit';
 
@@ -14,9 +13,9 @@ const PRIORITY_LEVEL_PERCENTILES = [10, 20, 30] as const;
 const SETTINGS_BY_PRIORITY_LEVEL = {
   low: {
     percentile: 10 as Percentile,
-    baseFeePercentageMultiplier: new BN(110),
-    priorityFeePercentageMultiplier: new BN(94),
-    minSuggestedMaxPriorityFeePerGas: new BN(1_000_000_000),
+    baseFeePercentageMultiplier: BigInt(110),
+    priorityFeePercentageMultiplier: BigInt(94),
+    minSuggestedMaxPriorityFeePerGas: BigInt(1_000_000_000),
     estimatedWaitTimes: {
       minWaitTimeEstimate: 15_000,
       maxWaitTimeEstimate: 30_000,
@@ -24,9 +23,9 @@ const SETTINGS_BY_PRIORITY_LEVEL = {
   },
   medium: {
     percentile: 20 as Percentile,
-    baseFeePercentageMultiplier: new BN(120),
-    priorityFeePercentageMultiplier: new BN(97),
-    minSuggestedMaxPriorityFeePerGas: new BN(1_500_000_000),
+    baseFeePercentageMultiplier: BigInt(120),
+    priorityFeePercentageMultiplier: BigInt(97),
+    minSuggestedMaxPriorityFeePerGas: BigInt(1_500_000_000),
     estimatedWaitTimes: {
       minWaitTimeEstimate: 15_000,
       maxWaitTimeEstimate: 45_000,
@@ -34,9 +33,9 @@ const SETTINGS_BY_PRIORITY_LEVEL = {
   },
   high: {
     percentile: 30 as Percentile,
-    baseFeePercentageMultiplier: new BN(125),
-    priorityFeePercentageMultiplier: new BN(98),
-    minSuggestedMaxPriorityFeePerGas: new BN(2_000_000_000),
+    baseFeePercentageMultiplier: BigInt(125),
+    priorityFeePercentageMultiplier: BigInt(98),
+    minSuggestedMaxPriorityFeePerGas: BigInt(2_000_000_000),
     estimatedWaitTimes: {
       minWaitTimeEstimate: 15_000,
       maxWaitTimeEstimate: 60_000,
@@ -44,6 +43,7 @@ const SETTINGS_BY_PRIORITY_LEVEL = {
   },
 };
 
+const bigIntMax = (x: bigint, y: bigint) => (x > y ? x : y);
 /**
  * Calculates a set of estimates assigned to a particular priority level based on the data returned
  * by `eth_feeHistory`.
@@ -61,28 +61,25 @@ function calculateEstimatesForPriorityLevel(
 
   const latestBaseFeePerGas = blocks[blocks.length - 1].baseFeePerGas;
 
-  const adjustedBaseFee = latestBaseFeePerGas
-    .mul(settings.baseFeePercentageMultiplier)
-    .divn(100);
-  const priorityFees = blocks
+  const adjustedBaseFee =
+    (latestBaseFeePerGas * settings.baseFeePercentageMultiplier) / BigInt(100);
+  const priorityFees: bigint[] = blocks
     .map((block) => {
       return 'priorityFeesByPercentile' in block
         ? block.priorityFeesByPercentile[settings.percentile]
         : null;
     })
-    .filter(BN.isBN);
+    .filter((n) => typeof n === 'bigint') as bigint[];
   const medianPriorityFee = medianOf(priorityFees);
-  const adjustedPriorityFee = medianPriorityFee
-    .mul(settings.priorityFeePercentageMultiplier)
-    .divn(100);
+  const adjustedPriorityFee =
+    (medianPriorityFee * settings.priorityFeePercentageMultiplier) /
+    BigInt(100);
 
-  const suggestedMaxPriorityFeePerGas = BN.max(
+  const suggestedMaxPriorityFeePerGas = bigIntMax(
     adjustedPriorityFee,
     settings.minSuggestedMaxPriorityFeePerGas,
   );
-  const suggestedMaxFeePerGas = adjustedBaseFee.add(
-    suggestedMaxPriorityFeePerGas,
-  );
+  const suggestedMaxFeePerGas = adjustedBaseFee + suggestedMaxPriorityFeePerGas;
 
   return {
     ...settings.estimatedWaitTimes,

@@ -1,4 +1,3 @@
-import { BN } from '@ethereumjs/util';
 import { query, fromHex, toHex } from '@metamask/controller-utils';
 import { when } from 'jest-when';
 
@@ -43,7 +42,7 @@ describe('fetchBlockFeeHistory', () => {
       when(mockedQuery)
         // @ts-expect-error Mock eth query does not fulfill type requirements
         .calledWith(ethQuery, 'blockNumber')
-        .mockResolvedValue(new BN(latestBlockNumber));
+        .mockResolvedValue(BigInt(latestBlockNumber));
     });
 
     it('should return a representation of fee history from the Ethereum network, organized by block rather than type of data', async () => {
@@ -160,7 +159,7 @@ describe('fetchBlockFeeHistory', () => {
       when(mockedQuery)
         // @ts-expect-error Mock eth query does not fulfill type requirements
         .calledWith(ethQuery, 'blockNumber')
-        .mockResolvedValue(new BN(latestBlockNumber));
+        .mockResolvedValue(BigInt(latestBlockNumber));
 
       expectedChunks.forEach(({ startBlockNumber, endBlockNumber }) => {
         const baseFeePerGas = expectedBlocks
@@ -206,7 +205,7 @@ describe('fetchBlockFeeHistory', () => {
     it('should pass it to the eth_feeHistory call', async () => {
       const latestBlockNumber = 3;
       const numberOfRequestedBlocks = 3;
-      const endBlock = new BN(latestBlockNumber);
+      const endBlock = BigInt(latestBlockNumber);
       when(mockedQuery)
         // @ts-expect-error Mock eth query does not fulfill type requirements
         .calledWith(ethQuery, 'eth_feeHistory', [
@@ -238,7 +237,7 @@ describe('fetchBlockFeeHistory', () => {
       when(mockedQuery)
         // @ts-expect-error Mock eth query does not fulfill type requirements
         .calledWith(ethQuery, 'blockNumber')
-        .mockResolvedValue(new BN(latestBlockNumber));
+        .mockResolvedValue(BigInt(latestBlockNumber));
     });
 
     it('should match each item in the "reward" key from the response to its percentile', async () => {
@@ -412,7 +411,7 @@ describe('fetchBlockFeeHistory', () => {
     it('should adjust fetched numberOfBlocks', async () => {
       const latestBlockNumber = 1024;
       const numberOfRequestedBlocks = 2048;
-      const endBlock = new BN(latestBlockNumber);
+      const endBlock = BigInt(latestBlockNumber);
 
       when(mockedQuery)
         // @ts-expect-error Mock eth query does not fulfill type requirements

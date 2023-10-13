@@ -1,4 +1,3 @@
-import { BN, stripHexPrefix } from '@ethereumjs/util';
 import { isAddress } from '@ethersproject/address';
 import type { AddApprovalRequest } from '@metamask/approval-controller';
 import type {
@@ -11,7 +10,6 @@ import {
   safelyExecute,
   handleFetch,
   toChecksumHexAddress,
-  BNToHex,
   fetchWithErrorHandling,
   IPFS_DEFAULT_GATEWAY_URL,
   ERC721,
@@ -460,7 +458,8 @@ export class NftController extends BaseController<NftConfig, NftState> {
         return [tokenURI, ERC1155];
       }
 
-      const hexTokenId = stripHexPrefix(BNToHex(new BN(tokenId)))
+      const hexTokenId = BigInt(tokenId)
+        .toString(16)
         .padStart(64, '0')
         .toLowerCase();
       return [tokenURI.replace('{id}', hexTokenId), ERC1155];
@@ -1234,7 +1233,7 @@ export class NftController extends BaseController<NftConfig, NftState> {
         tokenId,
         networkClientId,
       );
-      return !balance.isZero();
+      return balance !== BigInt(0);
       // eslint-disable-next-line no-empty
     } catch {
       // Ignore ERC-1155 contract error

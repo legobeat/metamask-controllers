@@ -15,8 +15,7 @@ import type {
 import { BaseController } from '@metamask/base-controller';
 import {
   BNToHex,
-  fractionBN,
-  hexToBN,
+  fractionBigInt,
   query,
   NetworkType,
   RPC,
@@ -876,8 +875,8 @@ export class TransactionController extends BaseController<
     // 3. If this is a contract address, safely estimate gas using RPC
     estimatedTransaction.value =
       typeof value === 'undefined' ? '0x0' : /* istanbul ignore next */ value;
-    const gasLimitBN = hexToBN(gasLimit);
-    estimatedTransaction.gas = BNToHex(fractionBN(gasLimitBN, 19, 20));
+    const gasLimitBN = BigInt(addHexPrefix(gasLimit));
+    estimatedTransaction.gas = BNToHex(fractionBigInt(gasLimitBN, 19, 20));
 
     let gasHex;
     let estimateGasError;
@@ -890,23 +889,21 @@ export class TransactionController extends BaseController<
     }
     // 4. Pad estimated gas without exceeding the most recent block gasLimit. If the network is a
     // a custom network then return the eth_estimateGas value.
-    const gasBN = hexToBN(gasHex);
-    const maxGasBN = gasLimitBN.muln(0.9);
-    const paddedGasBN = gasBN.muln(1.5);
-    /* istanbul ignore next */
-    if (gasBN.gt(maxGasBN) || isCustomNetwork) {
+    const gasBN = BigInt(addHexPrefix(gasHex));
+    const maxGasBN = fractionBigInt(gasLimitBN, 9, 10);
+    const paddedGasBN = fractionBigInt(gasBN, 15, 10);
+    if (gasBN > maxGasBN || isCustomNetwork) {
       return { gas: addHexPrefix(gasHex), gasPrice, estimateGasError };
     }
 
-    /* istanbul ignore next */
-    if (paddedGasBN.lt(maxGasBN)) {
+    if (paddedGasBN < maxGasBN) {
       return {
-        gas: addHexPrefix(BNToHex(paddedGasBN)),
+        gas: BNToHex(paddedGasBN),
         gasPrice,
         estimateGasError,
       };
     }
-    return { gas: addHexPrefix(BNToHex(maxGasBN)), gasPrice, estimateGasError };
+    return { gas: BNToHex(maxGasBN), gasPrice, estimateGasError };
   }
 
   /**
@@ -1726,15 +1723,15 @@ export class TransactionController extends BaseController<
     signedTx: TypedTransaction,
   ): Promise<void> {
     if (signedTx.r) {
-      transactionMeta.r = addHexPrefix(signedTx.r.toString(16));
+      transactionMeta.r = BNToHex(signedTx.r);
     }
 
     if (signedTx.s) {
-      transactionMeta.s = addHexPrefix(signedTx.s.toString(16));
+      transactionMeta.s = BNToHex(signedTx.s);
     }
 
     if (signedTx.v) {
-      transactionMeta.v = addHexPrefix(signedTx.v.toString(16));
+      transactionMeta.v = BNToHex(signedTx.v);
     }
   }
 

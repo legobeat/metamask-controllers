@@ -1,4 +1,4 @@
-import { BN, stripHexPrefix } from '@ethereumjs/util';
+import { addHexPrefix } from '@ethereumjs/util';
 import type { BigNumber } from '@ethersproject/bignumber';
 import {
   convertHexToDecimal,
@@ -253,11 +253,11 @@ export function addUrlProtocolPrefix(urlString: string): string {
 }
 
 /**
- * Converts an Ethers BigNumber to a BN.
+ * Converts an Ethers BigNumber to a BigInt.
  *
  * @param bigNumber - An Ethers BigNumber instance.
- * @returns A BN object.
+ * @returns A bigint.
  */
-export function ethersBigNumberToBN(bigNumber: BigNumber): BN {
-  return new BN(stripHexPrefix(bigNumber.toHexString()), 'hex');
+export function ethersBigNumberToBigInt(bigNumber: BigNumber): bigint {
+  return BigInt(addHexPrefix(bigNumber.toHexString()));
 }

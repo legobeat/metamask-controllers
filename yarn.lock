@@ -1512,6 +1512,7 @@ __metadata:
   resolution: "@metamask/controller-utils@workspace:packages/controller-utils"
   dependencies:
     "@ethereumjs/util": ^8.1.0
+    "@ethersproject/bignumber": ^5.7.0
     "@metamask/auto-changelog": ^3.1.0
     "@metamask/eth-query": ^3.0.1
     "@metamask/utils": ^8.1.0
@@ -1815,7 +1816,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@metamask/gas-fee-controller@workspace:packages/gas-fee-controller"
   dependencies:
-    "@ethereumjs/util": ^8.1.0
+    "@ethersproject/bignumber": ^5.7.0
     "@metamask/auto-changelog": ^3.1.0
     "@metamask/base-controller": ^3.2.3
     "@metamask/controller-utils": ^5.0.2
@@ -2463,6 +2464,7 @@ __metadata:
     "@ethereumjs/tx": ^4.2.0
     "@ethereumjs/util": ^8.1.0
     "@ethersproject/abi": ^5.7.0
+    "@ethersproject/bignumber": ^5.7.0
     "@metamask/approval-controller": ^4.0.1
     "@metamask/auto-changelog": ^3.1.0
     "@metamask/base-controller": ^3.2.3

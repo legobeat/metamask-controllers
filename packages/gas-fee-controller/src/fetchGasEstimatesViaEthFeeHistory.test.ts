@@ -1,4 +1,3 @@
-import { BN } from '@ethereumjs/util';
 import { when } from 'jest-when';
 
 import fetchBlockFeeHistory from './fetchBlockFeeHistory';
@@ -28,8 +27,8 @@ const mockedFetchLatestBlock = fetchLatestBlock as jest.Mock<
 
 describe('fetchGasEstimatesViaEthFeeHistory', () => {
   const latestBlock = {
-    number: new BN(1),
-    baseFeePerGas: new BN(100_000_000_000),
+    number: BigInt(1),
+    baseFeePerGas: BigInt(100_000_000_000),
   };
   const ethQuery = {
     blockNumber: async () => latestBlock.number,
@@ -39,13 +38,13 @@ describe('fetchGasEstimatesViaEthFeeHistory', () => {
   it('calculates target fees for low, medium, and high transaction priority levels', async () => {
     const blocks = [
       {
-        number: new BN(3),
-        baseFeePerGas: new BN(1),
+        number: BigInt(3),
+        baseFeePerGas: BigInt(1),
         gasUsedRatio: 1,
         priorityFeesByPercentile: {
-          10: new BN('0'),
-          20: new BN('0'),
-          30: new BN('0'),
+          10: BigInt('0'),
+          20: BigInt('0'),
+          30: BigInt('0'),
         },
       },
     ];

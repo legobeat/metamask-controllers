@@ -1,4 +1,3 @@
-import { BN } from '@ethereumjs/util';
 import nock from 'nock';
 
 import { MAX_SAFE_CHAIN_ID } from './constants';
@@ -19,11 +18,11 @@ describe('util', () => {
   });
 
   it('bNToHex', () => {
-    expect(util.BNToHex(new BN('1337'))).toBe('0x539');
+    expect(util.BNToHex(BigInt('1337'))).toBe('0x539');
   });
 
-  it('fractionBN', () => {
-    expect(util.fractionBN(new BN('1337'), 9, 10).toNumber()).toBe(1203);
+  it('fractionBigInt', () => {
+    expect(Number(util.fractionBigInt(BigInt('1337'), 9, 10))).toBe(1203);
   });
 
   it('getBuyURL', () => {
@@ -39,28 +38,24 @@ describe('util', () => {
     expect(util.getBuyURL('unrecognized network ID')).toBeUndefined();
   });
 
-  it('hexToBN', () => {
-    expect(util.hexToBN('0x1337').toNumber()).toBe(4919);
-  });
-
   describe('fromHex', () => {
     it('converts a string that represents a number in hexadecimal format with leading "0x" into a BN', () => {
-      expect(util.fromHex('0x1337')).toStrictEqual(new BN(4919));
+      expect(util.fromHex('0x1337')).toStrictEqual(BigInt(4919));
     });
 
     it('converts a string that represents a number in hexadecimal format without leading "0x" into a BN', () => {
-      expect(util.fromHex('1337')).toStrictEqual(new BN(4919));
+      expect(util.fromHex('1337')).toStrictEqual(BigInt(4919));
     });
 
     it('does nothing to a BN', () => {
-      const bn = new BN(4919);
+      const bn = BigInt(4919);
       expect(util.fromHex(bn)).toBe(bn);
     });
   });
 
   describe('toHex', () => {
     it('converts a BN to a hex string prepended with "0x"', () => {
-      expect(util.toHex(new BN(4919))).toBe('0x1337');
+      expect(util.toHex(BigInt(4919))).toBe('0x1337');
     });
 
     it('parses a string as a number in decimal format and converts it to a hex string prepended with "0x"', () => {
@@ -90,72 +85,72 @@ describe('util', () => {
 
   describe('gweiDecToWEIBN', () => {
     it('should convert a whole number to WEI', () => {
-      expect(util.gweiDecToWEIBN(1).toNumber()).toBe(1000000000);
-      expect(util.gweiDecToWEIBN(123).toNumber()).toBe(123000000000);
-      expect(util.gweiDecToWEIBN(101).toNumber()).toBe(101000000000);
-      expect(util.gweiDecToWEIBN(1234).toNumber()).toBe(1234000000000);
-      expect(util.gweiDecToWEIBN(1000).toNumber()).toBe(1000000000000);
+      expect(Number(util.gweiDecToWeiBigInt(1))).toBe(1000000000);
+      expect(Number(util.gweiDecToWeiBigInt(123))).toBe(123000000000);
+      expect(Number(util.gweiDecToWeiBigInt(101))).toBe(101000000000);
+      expect(Number(util.gweiDecToWeiBigInt(1234))).toBe(1234000000000);
+      expect(Number(util.gweiDecToWeiBigInt(1000))).toBe(1000000000000);
     });
 
     it('should convert a number with a decimal part to WEI', () => {
-      expect(util.gweiDecToWEIBN(1.1).toNumber()).toBe(1100000000);
-      expect(util.gweiDecToWEIBN(123.01).toNumber()).toBe(123010000000);
-      expect(util.gweiDecToWEIBN(101.001).toNumber()).toBe(101001000000);
-      expect(util.gweiDecToWEIBN(100.001).toNumber()).toBe(100001000000);
-      expect(util.gweiDecToWEIBN(1234.567).toNumber()).toBe(1234567000000);
+      expect(Number(util.gweiDecToWeiBigInt(1.1))).toBe(1100000000);
+      expect(Number(util.gweiDecToWeiBigInt(123.01))).toBe(123010000000);
+      expect(Number(util.gweiDecToWeiBigInt(101.001))).toBe(101001000000);
+      expect(Number(util.gweiDecToWeiBigInt(100.001))).toBe(100001000000);
+      expect(Number(util.gweiDecToWeiBigInt(1234.567))).toBe(1234567000000);
     });
 
     it('should convert a number < 1 to WEI', () => {
-      expect(util.gweiDecToWEIBN(0.1).toNumber()).toBe(100000000);
-      expect(util.gweiDecToWEIBN(0.01).toNumber()).toBe(10000000);
-      expect(util.gweiDecToWEIBN(0.001).toNumber()).toBe(1000000);
-      expect(util.gweiDecToWEIBN(0.567).toNumber()).toBe(567000000);
+      expect(Number(util.gweiDecToWeiBigInt(0.1))).toBe(100000000);
+      expect(Number(util.gweiDecToWeiBigInt(0.01))).toBe(10000000);
+      expect(Number(util.gweiDecToWeiBigInt(0.001))).toBe(1000000);
+      expect(Number(util.gweiDecToWeiBigInt(0.567))).toBe(567000000);
     });
 
     it('should round to whole WEI numbers', () => {
-      expect(util.gweiDecToWEIBN(0.1001).toNumber()).toBe(100100000);
-      expect(util.gweiDecToWEIBN(0.0109).toNumber()).toBe(10900000);
-      expect(util.gweiDecToWEIBN(0.0014).toNumber()).toBe(1400000);
-      expect(util.gweiDecToWEIBN(0.5676).toNumber()).toBe(567600000);
+      expect(Number(util.gweiDecToWeiBigInt(0.1001))).toBe(100100000);
+      expect(Number(util.gweiDecToWeiBigInt(0.0109))).toBe(10900000);
+      expect(Number(util.gweiDecToWeiBigInt(0.0014))).toBe(1400000);
+      expect(Number(util.gweiDecToWeiBigInt(0.5676))).toBe(567600000);
     });
 
     it('should handle inputs with more than 9 decimal places', () => {
-      expect(util.gweiDecToWEIBN(1.0000000162).toNumber()).toBe(1000000016);
-      expect(util.gweiDecToWEIBN(1.0000000165).toNumber()).toBe(1000000017);
-      expect(util.gweiDecToWEIBN(1.0000000199).toNumber()).toBe(1000000020);
-      expect(util.gweiDecToWEIBN(1.9999999999).toNumber()).toBe(2000000000);
-      expect(util.gweiDecToWEIBN(1.0000005998).toNumber()).toBe(1000000600);
-      expect(util.gweiDecToWEIBN(123456.0000005998).toNumber()).toBe(
+      expect(Number(util.gweiDecToWeiBigInt(1.0000000162))).toBe(1000000016);
+      expect(Number(util.gweiDecToWeiBigInt(1.0000000165))).toBe(1000000017);
+      expect(Number(util.gweiDecToWeiBigInt(1.0000000199))).toBe(1000000020);
+      expect(Number(util.gweiDecToWeiBigInt(1.9999999999))).toBe(2000000000);
+      expect(Number(util.gweiDecToWeiBigInt(1.0000005998))).toBe(1000000600);
+      expect(Number(util.gweiDecToWeiBigInt(123456.0000005998))).toBe(
         123456000000600,
       );
-      expect(util.gweiDecToWEIBN(1.000000016025).toNumber()).toBe(1000000016);
-      expect(util.gweiDecToWEIBN(1.0000000160000028).toNumber()).toBe(
+      expect(Number(util.gweiDecToWeiBigInt(1.000000016025))).toBe(1000000016);
+      expect(Number(util.gweiDecToWeiBigInt(1.0000000160000028))).toBe(
         1000000016,
       );
-      expect(util.gweiDecToWEIBN(1.000000016522).toNumber()).toBe(1000000017);
-      expect(util.gweiDecToWEIBN(1.000000016800022).toNumber()).toBe(
+      expect(Number(util.gweiDecToWeiBigInt(1.000000016522))).toBe(1000000017);
+      expect(Number(util.gweiDecToWeiBigInt(1.000000016800022))).toBe(
         1000000017,
       );
     });
 
     it('should work if there are extraneous trailing decimal zeroes', () => {
-      expect(util.gweiDecToWEIBN('0.5000').toNumber()).toBe(500000000);
-      expect(util.gweiDecToWEIBN('123.002300').toNumber()).toBe(123002300000);
-      expect(util.gweiDecToWEIBN('123.002300000000').toNumber()).toBe(
+      expect(Number(util.gweiDecToWeiBigInt('0.5000'))).toBe(500000000);
+      expect(Number(util.gweiDecToWeiBigInt('123.002300'))).toBe(123002300000);
+      expect(Number(util.gweiDecToWeiBigInt('123.002300000000'))).toBe(
         123002300000,
       );
-      expect(util.gweiDecToWEIBN('0.00000200000').toNumber()).toBe(2000);
+      expect(Number(util.gweiDecToWeiBigInt('0.00000200000'))).toBe(2000);
     });
 
     it('should work if there is no whole number specified', () => {
-      expect(util.gweiDecToWEIBN('.1').toNumber()).toBe(100000000);
-      expect(util.gweiDecToWEIBN('.01').toNumber()).toBe(10000000);
-      expect(util.gweiDecToWEIBN('.001').toNumber()).toBe(1000000);
-      expect(util.gweiDecToWEIBN('.567').toNumber()).toBe(567000000);
+      expect(Number(util.gweiDecToWeiBigInt('.1'))).toBe(100000000);
+      expect(Number(util.gweiDecToWeiBigInt('.01'))).toBe(10000000);
+      expect(Number(util.gweiDecToWeiBigInt('.001'))).toBe(1000000);
+      expect(Number(util.gweiDecToWeiBigInt('.567'))).toBe(567000000);
     });
 
     it('should handle NaN', () => {
-      expect(util.gweiDecToWEIBN(NaN).toNumber()).toBe(0);
+      expect(Number(util.gweiDecToWeiBigInt(NaN))).toBe(0);
     });
   });
 

@@ -1,4 +1,3 @@
-import { BN } from '@ethereumjs/util';
 import { ControllerMessenger } from '@metamask/base-controller';
 import { toHex } from '@metamask/controller-utils';
 import type { NetworkControllerMessenger } from '@metamask/network-controller';
@@ -7,10 +6,7 @@ import { PreferencesController } from '@metamask/preferences-controller';
 import * as sinon from 'sinon';
 
 import { AssetsContractController } from './AssetsContractController';
-import {
-  BN as exportedBn,
-  TokenBalancesController,
-} from './TokenBalancesController';
+import { TokenBalancesController } from './TokenBalancesController';
 import type { Token } from './TokenRatesController';
 import type { TokensControllerMessenger } from './TokensController';
 import { TokensController } from './TokensController';
@@ -34,10 +30,6 @@ describe('TokenBalancesController', () => {
 
   afterEach(() => {
     sinon.restore();
-  });
-
-  it('should re-export BN', () => {
-    expect(exportedBn).toStrictEqual(BN);
   });
 
   it('should set default state', () => {
@@ -154,7 +146,7 @@ describe('TokenBalancesController', () => {
       {
         onTokensStateChange: (listener) => assets.subscribe(listener),
         getSelectedAddress: () => preferences.state.selectedAddress,
-        getERC20BalanceOf: sinon.stub().returns(new BN(1)),
+        getERC20BalanceOf: sinon.stub().returns(BigInt(1)),
       },
       {
         interval: 1337,
@@ -213,7 +205,7 @@ describe('TokenBalancesController', () => {
     expect(mytoken?.balanceError).toHaveProperty('message', errorMsg);
     expect(tokenBalances.state.contractBalances[address].toNumber()).toBe(0);
 
-    getERC20BalanceOfStub.returns(new BN(1));
+    getERC20BalanceOfStub.returns(BigInt(1));
     await tokenBalances.updateBalances();
     expect(mytoken?.balanceError).toBeNull();
     expect(Object.keys(tokenBalances.state.contractBalances)).toContain(
@@ -282,7 +274,7 @@ describe('TokenBalancesController', () => {
       {
         onTokensStateChange,
         getSelectedAddress: () => '0x1234',
-        getERC20BalanceOf: sinon.stub().returns(new BN(1)),
+        getERC20BalanceOf: sinon.stub().returns(BigInt(1)),
       },
       {
         interval: 1337,
@@ -308,7 +300,7 @@ describe('TokenBalancesController', () => {
     await tokenBalances.updateBalances();
 
     expect(tokenBalances.state.contractBalances).toStrictEqual({
-      '0x02': new BN(1),
+      '0x02': BigInt(1),
     });
   });
 });

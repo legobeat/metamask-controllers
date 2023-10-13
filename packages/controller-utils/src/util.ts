@@ -2,7 +2,6 @@ import {
   addHexPrefix,
   isValidAddress,
   isHexString,
-  BN,
   toChecksumAddress,
   stripHexPrefix,
 } from '@ethereumjs/util';
@@ -42,7 +41,7 @@ export function isSafeChainId(chainId: Hex): boolean {
  * @param inputBn - BN instance to convert to a hex string.
  * @returns A '0x'-prefixed hex string.
  */
-export function BNToHex(inputBn: any) {
+export function BNToHex(inputBn: bigint) {
   return addHexPrefix(inputBn.toString(16));
 }
 
@@ -54,14 +53,14 @@ export function BNToHex(inputBn: any) {
  * @param denominator - Denominator of the fraction multiplier.
  * @returns Product of the multiplication.
  */
-export function fractionBN(
-  targetBN: any,
+export function fractionBigInt(
+  targetBN: bigint,
   numerator: number | string,
   denominator: number | string,
-) {
-  const numBN = new BN(numerator);
-  const denomBN = new BN(denominator);
-  return targetBN.mul(numBN).div(denomBN);
+): bigint {
+  const numBN = BigInt(numerator);
+  const denomBN = BigInt(denominator);
+  return (targetBN * numBN) / denomBN;
 }
 
 /**
@@ -70,9 +69,9 @@ export function fractionBN(
  * @param n - The base 10 number to convert to WEI.
  * @returns The number in WEI, as a BN.
  */
-export function gweiDecToWEIBN(n: number | string) {
+export function gweiDecToWeiBigInt(n: number | string): bigint {
   if (Number.isNaN(n)) {
-    return new BN(0);
+    return BigInt(0);
   }
 
   const parts = n.toString().split('.');
@@ -94,7 +93,7 @@ export function gweiDecToWEIBN(n: number | string) {
   let wei = toWei(`${wholePart}.${decimalPart}`, 'gwei');
 
   if (Number(decimalRoundingDigit) >= 5) {
-    wei = wei.add(new BN(1));
+    wei = wei.add(BigInt(1));
   }
 
   return wei;
@@ -107,7 +106,7 @@ export function gweiDecToWEIBN(n: number | string) {
  * @returns The value in dec gwei as string.
  */
 export function weiHexToGweiDec(hex: string) {
-  const hexWei = new BN(stripHexPrefix(hex), 16);
+  const hexWei = BigInt(addHexPrefix(hex));
   return fromWei(hexWei, 'gwei').toString(10);
 }
 
@@ -142,8 +141,8 @@ export function getBuyURL(
  * @param inputHex - Number represented as a hex string.
  * @returns A BN instance.
  */
-export function hexToBN(inputHex: string) {
-  return inputHex ? new BN(stripHexPrefix(inputHex), 16) : new BN(0);
+export function hexToBigInt(inputHex: string) {
+  return inputHex ? BigInt(addHexPrefix(inputHex)) : BigInt(0);
 }
 
 /**
@@ -170,11 +169,11 @@ export function hexToText(hex: string) {
  * @param value - A base-16 number encoded as a string.
  * @returns The number as a BN object in base-16 mode.
  */
-export function fromHex(value: string | BN): BN {
-  if (BN.isBN(value)) {
+export function fromHex(value: string | bigint): bigint {
+  if (typeof value === 'bigint') {
     return value;
   }
-  return new BN(hexToBN(value).toString(10));
+  return BigInt(hexToBigInt(value).toString(10));
 }
 
 /**
@@ -183,13 +182,14 @@ export function fromHex(value: string | BN): BN {
  * @param value - An integer, an integer encoded as a base-10 string, or a BN.
  * @returns The integer encoded as a hex string.
  */
-export function toHex(value: number | string | BN): Hex {
+export function toHex(value: number | string | bigint): Hex {
   if (typeof value === 'string' && isStrictHexString(value)) {
     return value;
   }
-  const hexString = BN.isBN(value)
-    ? value.toString(16)
-    : new BN(value.toString(), 10).toString(16);
+  const hexString =
+    typeof value === 'bigint'
+      ? value.toString(16)
+      : BigInt(value.toString()).toString(16);
   return `0x${hexString}`;
 }
 

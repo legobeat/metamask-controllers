@@ -1,8 +1,7 @@
-import { BN } from '@ethereumjs/util';
 import {
   query,
   handleFetch,
-  gweiDecToWEIBN,
+  gweiDecToWeiBigInt,
   weiHexToGweiDec,
 } from '@metamask/controller-utils';
 import type EthQuery from '@metamask/eth-query';
@@ -24,7 +23,7 @@ const makeClientIdHeader = (clientId: string) => ({ 'X-Client-Id': clientId });
  * @returns The decimal string GWEI amount.
  */
 export function normalizeGWEIDecimalNumbers(n: string | number) {
-  const numberAsWEIHex = gweiDecToWEIBN(n).toString(16);
+  const numberAsWEIHex = gweiDecToWeiBigInt(n).toString(16);
   const numberAsGWEI = weiHexToGweiDec(numberAsWEIHex).toString(10);
   return numberAsGWEI;
 }
@@ -126,6 +125,8 @@ export async function fetchEthGasPriceEstimate(
   };
 }
 
+const bigIntMin = (x: bigint, y: bigint) => (y < x ? y : x);
+
 /**
  * Estimate the time it will take for a transaction to be confirmed.
  *
@@ -141,44 +142,44 @@ export function calculateTimeEstimate(
 ): EstimatedGasFeeTimeBounds {
   const { low, medium, high, estimatedBaseFee } = gasFeeEstimates;
 
-  const maxPriorityFeePerGasInWEI = gweiDecToWEIBN(maxPriorityFeePerGas);
-  const maxFeePerGasInWEI = gweiDecToWEIBN(maxFeePerGas);
-  const estimatedBaseFeeInWEI = gweiDecToWEIBN(estimatedBaseFee);
+  const maxPriorityFeePerGasInWEI = gweiDecToWeiBigInt(maxPriorityFeePerGas);
+  const maxFeePerGasInWEI = gweiDecToWeiBigInt(maxFeePerGas);
+  const estimatedBaseFeeInWEI = gweiDecToWeiBigInt(estimatedBaseFee);
 
-  const effectiveMaxPriorityFee = BN.min(
+  const effectiveMaxPriorityFee = bigIntMin(
     maxPriorityFeePerGasInWEI,
-    maxFeePerGasInWEI.sub(estimatedBaseFeeInWEI),
+    maxFeePerGasInWEI - estimatedBaseFeeInWEI,
   );
 
-  const lowMaxPriorityFeeInWEI = gweiDecToWEIBN(
+  const lowMaxPriorityFeeInWEI = gweiDecToWeiBigInt(
     low.suggestedMaxPriorityFeePerGas,
   );
-  const mediumMaxPriorityFeeInWEI = gweiDecToWEIBN(
+  const mediumMaxPriorityFeeInWEI = gweiDecToWeiBigInt(
     medium.suggestedMaxPriorityFeePerGas,
   );
-  const highMaxPriorityFeeInWEI = gweiDecToWEIBN(
+  const highMaxPriorityFeeInWEI = gweiDecToWeiBigInt(
     high.suggestedMaxPriorityFeePerGas,
   );
 
   let lowerTimeBound;
   let upperTimeBound;
 
-  if (effectiveMaxPriorityFee.lt(lowMaxPriorityFeeInWEI)) {
+  if (effectiveMaxPriorityFee < lowMaxPriorityFeeInWEI) {
     lowerTimeBound = null;
     upperTimeBound = 'unknown' as unknownString;
   } else if (
-    effectiveMaxPriorityFee.gte(lowMaxPriorityFeeInWEI) &&
-    effectiveMaxPriorityFee.lt(mediumMaxPriorityFeeInWEI)
+    effectiveMaxPriorityFee >= lowMaxPriorityFeeInWEI &&
+    effectiveMaxPriorityFee < mediumMaxPriorityFeeInWEI
   ) {
     lowerTimeBound = low.minWaitTimeEstimate;
     upperTimeBound = low.maxWaitTimeEstimate;
   } else if (
-    effectiveMaxPriorityFee.gte(mediumMaxPriorityFeeInWEI) &&
-    effectiveMaxPriorityFee.lt(highMaxPriorityFeeInWEI)
+    effectiveMaxPriorityFee >= mediumMaxPriorityFeeInWEI &&
+    effectiveMaxPriorityFee < highMaxPriorityFeeInWEI
   ) {
     lowerTimeBound = medium.minWaitTimeEstimate;
     upperTimeBound = medium.maxWaitTimeEstimate;
-  } else if (effectiveMaxPriorityFee.eq(highMaxPriorityFeeInWEI)) {
+  } else if (effectiveMaxPriorityFee === highMaxPriorityFeeInWEI) {
     lowerTimeBound = high.minWaitTimeEstimate;
     upperTimeBound = high.maxWaitTimeEstimate;
   } else {

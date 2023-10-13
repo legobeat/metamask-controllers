@@ -29,7 +29,7 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
-    "@ethereumjs/util": "^8.1.0",
+    "@ethersproject/bignumber": "^5.7.0",
     "@metamask/base-controller": "^3.2.3",
     "@metamask/controller-utils": "^5.0.2",
     "@metamask/eth-query": "^3.0.1",

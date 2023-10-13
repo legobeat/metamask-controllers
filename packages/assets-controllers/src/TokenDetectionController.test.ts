@@ -1,4 +1,3 @@
-import { BN } from '@ethereumjs/util';
 import { ControllerMessenger } from '@metamask/base-controller';
 import {
   ChainId,
@@ -275,7 +274,7 @@ describe('TokenDetectionController', () => {
     });
 
     getBalancesInSingleCall.resolves({
-      [sampleTokenA.address]: new BN(1),
+      [sampleTokenA.address]: BigInt(1),
     });
     await tokenDetection.start();
     expect(tokensController.state.detectedTokens).toStrictEqual([]);
@@ -286,7 +285,7 @@ describe('TokenDetectionController', () => {
     changeNetwork(mainnet);
 
     getBalancesInSingleCall.resolves({
-      [sampleTokenA.address]: new BN(1),
+      [sampleTokenA.address]: BigInt(1),
     });
     await tokenDetection.start();
     expect(tokensController.state.detectedTokens).toStrictEqual([sampleTokenA]);
@@ -302,7 +301,7 @@ describe('TokenDetectionController', () => {
     changeNetwork(auroraMainnet);
 
     getBalancesInSingleCall.resolves({
-      [sampleTokenA.address]: new BN(1),
+      [sampleTokenA.address]: BigInt(1),
     });
     await tokenDetection.start();
     expect(tokensController.state.detectedTokens).toStrictEqual([sampleTokenA]);
@@ -315,13 +314,13 @@ describe('TokenDetectionController', () => {
     await tokenDetection.start();
 
     getBalancesInSingleCall.resolves({
-      [sampleTokenA.address]: new BN(1),
+      [sampleTokenA.address]: BigInt(1),
     });
     await tokenDetection.detectTokens();
     expect(tokensController.state.detectedTokens).toStrictEqual([sampleTokenA]);
 
     getBalancesInSingleCall.resolves({
-      [sampleTokenB.address]: new BN(1),
+      [sampleTokenB.address]: BigInt(1),
     });
     await tokenDetection.detectTokens();
     expect(tokensController.state.detectedTokens).toStrictEqual([
@@ -353,7 +352,7 @@ describe('TokenDetectionController', () => {
     tokensController.ignoreTokens([sampleTokenA.address]);
 
     getBalancesInSingleCall.resolves({
-      [sampleTokenA.address]: new BN(1),
+      [sampleTokenA.address]: BigInt(1),
     });
     await tokenDetection.detectTokens();
     expect(tokensController.state.tokens).toStrictEqual([sampleTokenB]);
@@ -380,7 +379,7 @@ describe('TokenDetectionController', () => {
     preferences.setSelectedAddress('0x0002');
 
     getBalancesInSingleCall.resolves({
-      [sampleTokenA.address]: new BN(1),
+      [sampleTokenA.address]: BigInt(1),
     });
     await tokenDetection.detectTokens();
     expect(tokensController.state.detectedTokens).toStrictEqual([sampleTokenA]);
@@ -393,7 +392,7 @@ describe('TokenDetectionController', () => {
     await tokenDetection.start();
 
     getBalancesInSingleCall.resolves({
-      [sampleTokenA.address]: new BN(1),
+      [sampleTokenA.address]: BigInt(1),
     });
     await tokenDetection.detectTokens();
 
@@ -407,7 +406,7 @@ describe('TokenDetectionController', () => {
   it('should not detect tokens if there is no selectedAddress set', async () => {
     await tokenDetection.start();
     getBalancesInSingleCall.resolves({
-      [sampleTokenA.address]: new BN(1),
+      [sampleTokenA.address]: BigInt(1),
     });
     await tokenDetection.detectTokens();
     expect(tokensController.state.detectedTokens).toStrictEqual([]);
@@ -418,7 +417,7 @@ describe('TokenDetectionController', () => {
     changeNetwork(mainnet);
 
     getBalancesInSingleCall.resolves({
-      [sampleTokenA.address]: new BN(1),
+      [sampleTokenA.address]: BigInt(1),
     });
     await tokenDetection.start();
     expect(tokensController.state.detectedTokens).toStrictEqual([sampleTokenA]);
