@@ -24,7 +24,7 @@ const makeClientIdHeader = (clientId: string) => ({ 'X-Client-Id': clientId });
  */
 export function normalizeGWEIDecimalNumbers(n: string | number) {
   const numberAsWEIHex = gweiDecToWeiBigInt(n).toString(16);
-  const numberAsGWEI = weiHexToGweiDec(numberAsWEIHex).toString(10);
+  const numberAsGWEI = weiHexToGweiDec(numberAsWEIHex);
   return numberAsGWEI;
 }
 
