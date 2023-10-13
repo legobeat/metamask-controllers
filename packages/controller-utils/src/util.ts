@@ -93,7 +93,7 @@ export function gweiDecToWeiBigInt(n: number | string): bigint {
   let wei = BigInt(`${wholePart}${decimalPart}`);
 
   if (Number(decimalRoundingDigit) >= 5) {
-    wei = wei + BigInt(1);
+    wei += BigInt(1);
   }
 
   return wei;

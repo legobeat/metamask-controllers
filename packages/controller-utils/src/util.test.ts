@@ -63,7 +63,9 @@ describe('util', () => {
     });
 
     it('throws an error if given a string with decimals', () => {
-      expect(() => util.toHex('4919.3')).toThrow('Cannot convert 4919.3 to a BigInt');
+      expect(() => util.toHex('4919.3')).toThrow(
+        'Cannot convert 4919.3 to a BigInt',
+      );
     });
 
     it('converts a number to a hex string prepended with "0x"', () => {
@@ -71,7 +73,9 @@ describe('util', () => {
     });
 
     it('throws an error if given a float', () => {
-      expect(() => util.toHex(4919.3)).toThrow('Cannot convert 4919.3 to a BigInt');
+      expect(() => util.toHex(4919.3)).toThrow(
+        'Cannot convert 4919.3 to a BigInt',
+      );
     });
 
     it('does nothing to a string that is already a "0x"-prepended hex value', () => {
@@ -79,7 +83,9 @@ describe('util', () => {
     });
 
     it('throws an error if given a non-"0x"-prepended string that is not a valid hex value', () => {
-      expect(() => util.toHex('zzzz')).toThrow('Cannot convert zzzz to a BigInt');
+      expect(() => util.toHex('zzzz')).toThrow(
+        'Cannot convert zzzz to a BigInt',
+      );
     });
   });
 
