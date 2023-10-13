@@ -1,16 +1,15 @@
+import {
+  GWEI_TO_WEI,
+  addHexPrefix,
+  isValidAddress,
+  isHexString,
+  toChecksumAddress,
+  stripHexPrefix,
+} from '@ethereumjs/util';
 import type EthQuery from '@metamask/eth-query';
 import type { Hex, Json } from '@metamask/utils';
 import { isStrictHexString } from '@metamask/utils';
 import ensNamehash from 'eth-ens-namehash';
-import {
-  addHexPrefix,
-  isValidAddress,
-  isHexString,
-  BN,
-  toChecksumAddress,
-  stripHexPrefix,
-} from 'ethereumjs-util';
-import { fromWei, toWei } from 'ethjs-unit';
 import deepEqual from 'fast-deep-equal';
 
 import { MAX_SAFE_CHAIN_ID } from './constants';
@@ -42,7 +41,7 @@ export function isSafeChainId(chainId: Hex): boolean {
  * @param inputBn - BN instance to convert to a hex string.
  * @returns A '0x'-prefixed hex string.
  */
-export function BNToHex(inputBn: any) {
+export function BNToHex(inputBn: bigint) {
   return addHexPrefix(inputBn.toString(16));
 }
 
@@ -54,14 +53,14 @@ export function BNToHex(inputBn: any) {
  * @param denominator - Denominator of the fraction multiplier.
  * @returns Product of the multiplication.
  */
-export function fractionBN(
-  targetBN: any,
+export function fractionBigInt(
+  targetBN: bigint,
   numerator: number | string,
   denominator: number | string,
-) {
-  const numBN = new BN(numerator);
-  const denomBN = new BN(denominator);
-  return targetBN.mul(numBN).div(denomBN);
+): bigint {
+  const numBN = BigInt(numerator);
+  const denomBN = BigInt(denominator);
+  return (targetBN * numBN) / denomBN;
 }
 
 /**
@@ -70,9 +69,9 @@ export function fractionBN(
  * @param n - The base 10 number to convert to WEI.
  * @returns The number in WEI, as a BN.
  */
-export function gweiDecToWEIBN(n: number | string) {
+export function gweiDecToWeiBigInt(n: number | string): bigint {
   if (Number.isNaN(n)) {
-    return new BN(0);
+    return BigInt(0);
   }
 
   const parts = n.toString().split('.');
@@ -80,21 +79,21 @@ export function gweiDecToWEIBN(n: number | string) {
   let decimalPart = parts[1] || '';
 
   if (!decimalPart) {
-    return toWei(wholePart, 'gwei');
+    return BigInt(wholePart) * GWEI_TO_WEI;
   }
 
   if (decimalPart.length <= 9) {
-    return toWei(`${wholePart}.${decimalPart}`, 'gwei');
+    return BigInt(`${wholePart}${decimalPart.padEnd(9, '0')}`);
   }
 
   const decimalPartToRemove = decimalPart.slice(9);
   const decimalRoundingDigit = decimalPartToRemove[0];
 
   decimalPart = decimalPart.slice(0, 9);
-  let wei = toWei(`${wholePart}.${decimalPart}`, 'gwei');
+  let wei = BigInt(`${wholePart}${decimalPart}`);
 
   if (Number(decimalRoundingDigit) >= 5) {
-    wei = wei.add(new BN(1));
+    wei += BigInt(1);
   }
 
   return wei;
@@ -107,8 +106,8 @@ export function gweiDecToWEIBN(n: number | string) {
  * @returns The value in dec gwei as string.
  */
 export function weiHexToGweiDec(hex: string) {
-  const hexWei = new BN(stripHexPrefix(hex), 16);
-  return fromWei(hexWei, 'gwei').toString(10);
+  const hexWei = BigInt(addHexPrefix(hex));
+  return (Number(hexWei) / Number(GWEI_TO_WEI)).toString(10);
 }
 
 /**
@@ -142,8 +141,8 @@ export function getBuyURL(
  * @param inputHex - Number represented as a hex string.
  * @returns A BN instance.
  */
-export function hexToBN(inputHex: string) {
-  return inputHex ? new BN(stripHexPrefix(inputHex), 16) : new BN(0);
+export function hexToBigInt(inputHex: string) {
+  return inputHex ? BigInt(addHexPrefix(inputHex)) : BigInt(0);
 }
 
 /**
@@ -170,11 +169,11 @@ export function hexToText(hex: string) {
  * @param value - A base-16 number encoded as a string.
  * @returns The number as a BN object in base-16 mode.
  */
-export function fromHex(value: string | BN): BN {
-  if (BN.isBN(value)) {
+export function fromHex(value: string | bigint): bigint {
+  if (typeof value === 'bigint') {
     return value;
   }
-  return new BN(hexToBN(value).toString(10));
+  return BigInt(hexToBigInt(value).toString(10));
 }
 
 /**
@@ -183,13 +182,14 @@ export function fromHex(value: string | BN): BN {
  * @param value - An integer, an integer encoded as a base-10 string, or a BN.
  * @returns The integer encoded as a hex string.
  */
-export function toHex(value: number | string | BN): Hex {
+export function toHex(value: number | string | bigint): Hex {
   if (typeof value === 'string' && isStrictHexString(value)) {
     return value;
   }
-  const hexString = BN.isBN(value)
-    ? value.toString(16)
-    : new BN(value.toString(), 10).toString(16);
+  const hexString =
+    typeof value === 'bigint'
+      ? value.toString(16)
+      : BigInt(value.toString()).toString(16);
   return `0x${hexString}`;
 }
 

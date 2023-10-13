@@ -24,7 +24,6 @@ import type {
 } from '@metamask/network-controller';
 import { defaultState as defaultNetworkState } from '@metamask/network-controller';
 import { PreferencesController } from '@metamask/preferences-controller';
-import { BN } from 'ethereumjs-util';
 import HttpProvider from 'ethjs-provider-http';
 import nock from 'nock';
 import * as sinon from 'sinon';
@@ -148,7 +147,7 @@ function setupController({
     tokenAddress: string,
     tokenId: string,
     userAddress: string,
-  ) => Promise<BN>;
+  ) => Promise<bigint>;
 } = {}) {
   const preferences = new PreferencesController();
   const onNetworkStateChangeListeners: ((state: NetworkState) => void)[] = [];
@@ -416,7 +415,7 @@ describe('NftController', () => {
 
     it('should error if the user does not own the suggested ERC1155 NFT', async function () {
       const { nftController, messenger } = setupController({
-        getERC1155BalanceOfStub: jest.fn().mockImplementation(() => new BN(0)),
+        getERC1155BalanceOfStub: jest.fn().mockImplementation(() => BigInt(0)),
       });
 
       const callActionSpy = jest.spyOn(messenger, 'call').mockResolvedValue({});
@@ -659,7 +658,7 @@ describe('NftController', () => {
         getERC1155TokenURIStub: jest
           .fn()
           .mockImplementation(() => 'https://testtokenuri.com'),
-        getERC1155BalanceOfStub: jest.fn().mockImplementation(() => new BN(1)),
+        getERC1155BalanceOfStub: jest.fn().mockImplementation(() => BigInt(1)),
       });
       preferences.setOpenSeaEnabled(false);
       preferences.setIsIpfsGatewayEnabled(true);
@@ -717,7 +716,7 @@ describe('NftController', () => {
         getERC1155TokenURIStub: jest
           .fn()
           .mockImplementation(() => 'https://testtokenuri.com'),
-        getERC1155BalanceOfStub: jest.fn().mockImplementation(() => new BN(1)),
+        getERC1155BalanceOfStub: jest.fn().mockImplementation(() => BigInt(1)),
       });
       preferences.setOpenSeaEnabled(true);
       preferences.setIsIpfsGatewayEnabled(true);

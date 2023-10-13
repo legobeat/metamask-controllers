@@ -1,10 +1,6 @@
 import type { BaseConfig, BaseState } from '@metamask/base-controller';
 import { BaseController } from '@metamask/base-controller';
-import {
-  BNToHex,
-  query,
-  safelyExecuteWithTimeout,
-} from '@metamask/controller-utils';
+import { query, safelyExecuteWithTimeout } from '@metamask/controller-utils';
 import EthQuery from '@metamask/eth-query';
 import type { Provider } from '@metamask/eth-query';
 import type { PreferencesState } from '@metamask/preferences-controller';
@@ -176,7 +172,7 @@ export class AccountTrackerController extends BaseController<
 
     for (const address of accountsToUpdate) {
       accounts[address] = {
-        balance: BNToHex(await this.getBalanceFromChain(address)),
+        balance: (await this.getBalanceFromChain(address)) || '0x0',
       };
     }
 

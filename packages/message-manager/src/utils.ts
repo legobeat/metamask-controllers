@@ -1,10 +1,10 @@
+import { addHexPrefix, bufferToHex, stripHexPrefix } from '@ethereumjs/util';
 import { isValidHexAddress } from '@metamask/controller-utils';
 import {
   TYPED_MESSAGE_SCHEMA,
   typedSignatureHash,
 } from '@metamask/eth-sig-util';
 import type { Hex } from '@metamask/utils';
-import { addHexPrefix, bufferToHex, stripHexPrefix } from 'ethereumjs-util';
 import { validate } from 'jsonschema';
 
 import type { DecryptMessageParams } from './DecryptMessageManager';

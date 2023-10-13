@@ -1,5 +1,5 @@
+import { isHexPrefixed } from '@ethereumjs/util';
 import { ParsedMessage } from '@spruceid/siwe-parser';
-import { isHexPrefixed } from 'ethereumjs-util';
 
 import { projectLogger, createModuleLogger } from './logger';
 

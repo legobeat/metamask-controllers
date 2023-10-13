@@ -8,9 +8,11 @@ import {
   timeoutFetch,
 } from '@metamask/controller-utils';
 import { abiERC1155 } from '@metamask/metamask-eth-abis';
-import type { BN } from 'ethereumjs-util';
 
-import { getFormattedIpfsUrl, ethersBigNumberToBN } from '../../../assetsUtil';
+import {
+  getFormattedIpfsUrl,
+  ethersBigNumberToBigInt,
+} from '../../../assetsUtil';
 
 export class ERC1155Standard {
   private readonly provider: Web3Provider;
@@ -85,10 +87,10 @@ export class ERC1155Standard {
     contractAddress: string,
     address: string,
     tokenId: string,
-  ): Promise<BN> => {
+  ): Promise<bigint> => {
     const contract = new Contract(contractAddress, abiERC1155, this.provider);
     const balance = await contract.balanceOf(address, tokenId);
-    return ethersBigNumberToBN(balance);
+    return ethersBigNumberToBigInt(balance);
   };
 
   /**

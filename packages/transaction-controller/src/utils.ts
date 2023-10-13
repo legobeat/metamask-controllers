@@ -1,5 +1,5 @@
+import { addHexPrefix, isHexString } from '@ethereumjs/util';
 import { convertHexToDecimal } from '@metamask/controller-utils';
-import { addHexPrefix, isHexString } from 'ethereumjs-util';
 import type { Transaction as NonceTrackerTransaction } from 'nonce-tracker/dist/NonceTracker';
 
 import type {

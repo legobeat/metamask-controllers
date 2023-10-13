@@ -16,7 +16,7 @@ import type {
 } from '@metamask/snaps-controllers';
 import type { Snap, ValidatedSnapId } from '@metamask/snaps-utils';
 import type { Keyring, Json } from '@metamask/utils';
-import { sha256FromString } from 'ethereumjs-util';
+import { sha256 } from '@noble/hashes/sha256';
 import type { Patch } from 'immer';
 import { v4 as uuid } from 'uuid';
 
@@ -406,7 +406,7 @@ export class AccountsController extends BaseControllerV2<
         address,
       );
       const v4options = {
-        random: sha256FromString(address).slice(0, 16),
+        random: sha256(address).slice(0, 16),
       };
 
       internalAccounts.push({

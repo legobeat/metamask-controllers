@@ -1,13 +1,12 @@
+import { toUtf8 } from '@ethereumjs/util';
 import { Contract } from '@ethersproject/contracts';
 import type { Web3Provider } from '@ethersproject/providers';
 import { decodeSingle } from '@metamask/abi-utils';
 import { ERC20 } from '@metamask/controller-utils';
 import { abiERC20 } from '@metamask/metamask-eth-abis';
 import { assertIsStrictHexString } from '@metamask/utils';
-import { toUtf8 } from 'ethereumjs-util';
-import type { BN } from 'ethereumjs-util';
 
-import { ethersBigNumberToBN } from '../assetsUtil';
+import { ethersBigNumberToBigInt } from '../assetsUtil';
 
 export class ERC20Standard {
   private readonly provider: Web3Provider;
@@ -21,12 +20,15 @@ export class ERC20Standard {
    *
    * @param address - Asset ERC20 contract address.
    * @param selectedAddress - Current account public address.
-   * @returns Promise resolving to BN object containing balance for current account on specific asset contract.
+   * @returns Promise resolving to BigInt value containing balance for current account on specific asset contract.
    */
-  async getBalanceOf(address: string, selectedAddress: string): Promise<BN> {
+  async getBalanceOf(
+    address: string,
+    selectedAddress: string,
+  ): Promise<bigint> {
     const contract = new Contract(address, abiERC20, this.provider);
     const balance = await contract.balanceOf(selectedAddress);
-    return ethersBigNumberToBN(balance);
+    return ethersBigNumberToBigInt(balance);
   }
 
   /**
@@ -117,7 +119,7 @@ export class ERC20Standard {
     standard: string;
     symbol: string | undefined;
     decimals: string | undefined;
-    balance: BN | undefined;
+    balance: bigint | undefined;
   }> {
     const [decimals, symbol] = await Promise.all([
       this.getTokenDecimals(address),

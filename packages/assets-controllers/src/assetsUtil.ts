@@ -1,3 +1,4 @@
+import { addHexPrefix } from '@ethereumjs/util';
 import type { BigNumber } from '@ethersproject/bignumber';
 import {
   convertHexToDecimal,
@@ -6,7 +7,6 @@ import {
 } from '@metamask/controller-utils';
 import { rpcErrors } from '@metamask/rpc-errors';
 import type { Hex } from '@metamask/utils';
-import { BN, stripHexPrefix } from 'ethereumjs-util';
 import { CID } from 'multiformats/cid';
 
 import type { Nft, NftMetadata } from './NftController';
@@ -253,11 +253,11 @@ export function addUrlProtocolPrefix(urlString: string): string {
 }
 
 /**
- * Converts an Ethers BigNumber to a BN.
+ * Converts an Ethers BigNumber to a BigInt.
  *
  * @param bigNumber - An Ethers BigNumber instance.
- * @returns A BN object.
+ * @returns A bigint.
  */
-export function ethersBigNumberToBN(bigNumber: BigNumber): BN {
-  return new BN(stripHexPrefix(bigNumber.toHexString()), 'hex');
+export function ethersBigNumberToBigInt(bigNumber: BigNumber): bigint {
+  return BigInt(addHexPrefix(bigNumber.toHexString()));
 }

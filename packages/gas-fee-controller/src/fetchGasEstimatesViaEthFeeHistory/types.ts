@@ -1,8 +1,6 @@
-import type { BN } from 'ethereumjs-util';
-
 export type EthBlock = {
-  number: BN;
-  baseFeePerGas: BN;
+  number: bigint;
+  baseFeePerGas: bigint;
 };
 
 export type FeeRange = [string, string];

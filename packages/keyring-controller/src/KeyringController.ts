@@ -1,4 +1,12 @@
 import type { TxData, TypedTransaction } from '@ethereumjs/tx';
+import {
+  addHexPrefix,
+  bufferToHex,
+  isValidPrivate,
+  toBuffer,
+  stripHexPrefix,
+  getBinarySize,
+} from '@ethereumjs/util';
 import type {
   MetaMaskKeyring as QRKeyring,
   IKeyringState as IQRKeyringState,
@@ -14,14 +22,6 @@ import type { PreferencesController } from '@metamask/preferences-controller';
 import type { Eip1024EncryptedData, Hex, Keyring, Json } from '@metamask/utils';
 import { assertIsStrictHexString, hasProperty } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
-import {
-  addHexPrefix,
-  bufferToHex,
-  isValidPrivate,
-  toBuffer,
-  stripHexPrefix,
-  getBinarySize,
-} from 'ethereumjs-util';
 import Wallet, { thirdparty as importers } from 'ethereumjs-wallet';
 import type { Patch } from 'immer';
 

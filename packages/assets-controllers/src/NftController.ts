@@ -10,7 +10,6 @@ import {
   safelyExecute,
   handleFetch,
   toChecksumHexAddress,
-  BNToHex,
   fetchWithErrorHandling,
   IPFS_DEFAULT_GATEWAY_URL,
   ERC721,
@@ -27,7 +26,6 @@ import type { PreferencesState } from '@metamask/preferences-controller';
 import { rpcErrors } from '@metamask/rpc-errors';
 import type { Hex } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
-import { BN, stripHexPrefix } from 'ethereumjs-util';
 import { EventEmitter } from 'events';
 import { v4 as random } from 'uuid';
 
@@ -460,7 +458,8 @@ export class NftController extends BaseController<NftConfig, NftState> {
         return [tokenURI, ERC1155];
       }
 
-      const hexTokenId = stripHexPrefix(BNToHex(new BN(tokenId)))
+      const hexTokenId = BigInt(tokenId)
+        .toString(16)
         .padStart(64, '0')
         .toLowerCase();
       return [tokenURI.replace('{id}', hexTokenId), ERC1155];
@@ -1234,7 +1233,7 @@ export class NftController extends BaseController<NftConfig, NftState> {
         tokenId,
         networkClientId,
       );
-      return !balance.isZero();
+      return balance !== BigInt(0);
       // eslint-disable-next-line no-empty
     } catch {
       // Ignore ERC-1155 contract error

@@ -2,14 +2,10 @@ import type { BaseConfig, BaseState } from '@metamask/base-controller';
 import { BaseController } from '@metamask/base-controller';
 import { safelyExecute } from '@metamask/controller-utils';
 import type { PreferencesState } from '@metamask/preferences-controller';
-import { BN } from 'ethereumjs-util';
 
 import type { AssetsContractController } from './AssetsContractController';
 import type { Token } from './TokenRatesController';
 import type { TokensState } from './TokensController';
-
-// TODO: Remove this export in the next major release
-export { BN };
 
 /**
  * @type TokenBalancesConfig
@@ -30,7 +26,7 @@ export interface TokenBalancesConfig extends BaseConfig {
  * @property contractBalances - Hash of token contract addresses to balances
  */
 export interface TokenBalancesState extends BaseState {
-  contractBalances: { [address: string]: BN };
+  contractBalances: { [address: string]: bigint };
 }
 
 /**
@@ -115,7 +111,7 @@ export class TokenBalancesController extends BaseController<
       return;
     }
     const { tokens } = this.config;
-    const newContractBalances: { [address: string]: BN } = {};
+    const newContractBalances: { [address: string]: bigint } = {};
     for (const i in tokens) {
       const { address } = tokens[i];
       try {
@@ -125,7 +121,7 @@ export class TokenBalancesController extends BaseController<
         );
         tokens[i].balanceError = null;
       } catch (error) {
-        newContractBalances[address] = new BN(0);
+        newContractBalances[address] = BigInt(0);
         tokens[i].balanceError = error;
       }
     }

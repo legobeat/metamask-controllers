@@ -1,5 +1,4 @@
 import { query, fromHex, toHex } from '@metamask/controller-utils';
-import { BN } from 'ethereumjs-util';
 
 type EthQuery = any;
 
@@ -12,7 +11,7 @@ type EthQuery = any;
  */
 type RequestChunkSpecifier = {
   numberOfBlocks: number;
-  endBlockNumber: BN;
+  endBlockNumber: bigint;
 };
 
 /**
@@ -51,10 +50,10 @@ export type EthFeeHistoryResponse = {
  * on how this works.)
  */
 type ExistingFeeHistoryBlock<Percentile extends number> = {
-  number: BN;
-  baseFeePerGas: BN;
+  number: bigint;
+  baseFeePerGas: bigint;
   gasUsedRatio: number;
-  priorityFeesByPercentile: Record<Percentile, BN>;
+  priorityFeesByPercentile: Record<Percentile, bigint>;
 };
 
 /**
@@ -65,8 +64,8 @@ type ExistingFeeHistoryBlock<Percentile extends number> = {
  * @property baseFeePerGas - The estimated base fee per gas for the block in WEI, as a BN.
  */
 type NextFeeHistoryBlock = {
-  number: BN;
-  baseFeePerGas: BN;
+  number: bigint;
+  baseFeePerGas: bigint;
 };
 
 /**
@@ -140,7 +139,7 @@ export default async function fetchBlockFeeHistory<Percentile extends number>({
 }: {
   ethQuery: EthQuery;
   numberOfBlocks: number;
-  endBlock?: 'latest' | BN;
+  endBlock?: 'latest' | bigint;
   percentiles?: readonly Percentile[];
   includeNextBlock?: boolean;
 }): Promise<FeeHistoryBlock<Percentile>[]> {
@@ -205,8 +204,8 @@ function buildExistingFeeHistoryBlock<Percentile extends number>({
   priorityFeePercentileGroups,
   percentiles,
 }: {
-  baseFeePerGas: BN;
-  number: BN;
+  baseFeePerGas: bigint;
+  number: bigint;
   blockIndex: number;
   gasUsedRatios: number[];
   priorityFeePercentileGroups: string[][];
@@ -219,7 +218,7 @@ function buildExistingFeeHistoryBlock<Percentile extends number>({
       const priorityFee = priorityFeesForEachPercentile[percentileIndex];
       return { ...obj, [percentile]: fromHex(priorityFee) };
     },
-    {} as Record<Percentile, BN>,
+    {} as Record<Percentile, bigint>,
   );
 
   return {
@@ -242,8 +241,8 @@ function buildNextFeeHistoryBlock({
   baseFeePerGas,
   number,
 }: {
-  baseFeePerGas: BN;
-  number: BN;
+  baseFeePerGas: bigint;
+  number: bigint;
 }) {
   return {
     number,
@@ -277,7 +276,7 @@ async function makeRequestForChunk<Percentile extends number>({
 }: {
   ethQuery: EthQuery;
   numberOfBlocks: number;
-  endBlockNumber: BN;
+  endBlockNumber: bigint;
   percentiles: readonly Percentile[];
   includeNextBlock: boolean;
 }): Promise<FeeHistoryBlock<Percentile>[]> {
@@ -309,7 +308,7 @@ async function makeRequestForChunk<Percentile extends number>({
 
     return baseFeesPerGasAsHex.map((baseFeePerGasAsHex, blockIndex) => {
       const baseFeePerGas = fromHex(baseFeePerGasAsHex);
-      const number = startBlockNumber.addn(blockIndex);
+      const number = startBlockNumber + BigInt(blockIndex);
 
       return blockIndex >= numberOfExistingResults
         ? buildNextFeeHistoryBlock({ baseFeePerGas, number })
@@ -342,27 +341,27 @@ async function makeRequestForChunk<Percentile extends number>({
  * retrieve all of the requested blocks, sorted from oldest block to newest block.
  */
 function determineRequestChunkSpecifiers(
-  endBlockNumber: BN,
+  endBlockNumber: bigint,
   totalNumberOfBlocks: number,
 ): RequestChunkSpecifier[] {
-  if (endBlockNumber.lt(new BN(totalNumberOfBlocks))) {
-    totalNumberOfBlocks = endBlockNumber.toNumber();
+  if (endBlockNumber < BigInt(totalNumberOfBlocks)) {
+    totalNumberOfBlocks = Number(endBlockNumber);
   }
 
   const specifiers = [];
   for (
-    let chunkStartBlockNumber = endBlockNumber.subn(totalNumberOfBlocks);
-    chunkStartBlockNumber.lt(endBlockNumber);
-    chunkStartBlockNumber = chunkStartBlockNumber.addn(
+    let chunkStartBlockNumber = endBlockNumber - BigInt(totalNumberOfBlocks);
+    chunkStartBlockNumber < endBlockNumber;
+    chunkStartBlockNumber += BigInt(
       MAX_NUMBER_OF_BLOCKS_PER_ETH_FEE_HISTORY_CALL,
     )
   ) {
-    const distanceToEnd = endBlockNumber.sub(chunkStartBlockNumber).toNumber();
+    const distanceToEnd = Number(endBlockNumber - chunkStartBlockNumber);
     const numberOfBlocks =
       distanceToEnd < MAX_NUMBER_OF_BLOCKS_PER_ETH_FEE_HISTORY_CALL
         ? distanceToEnd
         : MAX_NUMBER_OF_BLOCKS_PER_ETH_FEE_HISTORY_CALL;
-    const chunkEndBlockNumber = chunkStartBlockNumber.addn(numberOfBlocks);
+    const chunkEndBlockNumber = chunkStartBlockNumber + BigInt(numberOfBlocks);
     specifiers.push({ numberOfBlocks, endBlockNumber: chunkEndBlockNumber });
   }
   return specifiers;
