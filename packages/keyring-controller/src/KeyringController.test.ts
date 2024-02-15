@@ -15,12 +15,12 @@ import type { EthKeyring } from '@metamask/keyring-api';
 import { wordlist } from '@metamask/scure-bip39/dist/wordlists/english';
 import type { KeyringClass } from '@metamask/utils';
 import {
+  bytesToHex,
   isValidHexAddress,
   type Hex,
   type Keyring,
   type Json,
 } from '@metamask/utils';
-import { bufferToHex } from 'ethereumjs-util';
 import * as sinon from 'sinon';
 import * as uuid from 'uuid';
 
@@ -1273,7 +1273,7 @@ describe('KeyringController', () => {
     describe('when the keyring for the given address supports signPersonalMessage', () => {
       it('should sign personal message', async () => {
         await withController(async ({ controller, initialState }) => {
-          const data = bufferToHex(Buffer.from('Hello from test', 'utf8'));
+          const data = bytesToHex(Buffer.from('Hello from test', 'utf8'));
           const account = initialState.keyrings[0].accounts[0];
           const signature = await controller.signPersonalMessage({
             data,
@@ -2344,7 +2344,7 @@ describe('KeyringController', () => {
           ),
         );
 
-        const data = bufferToHex(
+        const data = bytesToHex(
           Buffer.from('Example `personal_sign` message', 'utf8'),
         );
         const qrKeyring = signProcessKeyringController.state.keyrings.find(
