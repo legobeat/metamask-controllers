@@ -2898,6 +2898,7 @@ __metadata:
     "@babel/runtime": ^7.23.9
     "@ethereumjs/common": ^3.2.0
     "@ethereumjs/tx": ^4.2.0
+    "@ethereumjs/util": ^8.1.0
     "@ethersproject/abi": ^5.7.0
     "@metamask/approval-controller": ^5.1.2
     "@metamask/auto-changelog": ^3.4.4
@@ -2916,7 +2917,6 @@ __metadata:
     bn.js: ^5.2.1
     deepmerge: ^4.2.2
     eth-method-registry: ^4.0.0
-    ethereumjs-util: ^7.0.10
     fast-json-patch: ^3.1.1
     jest: ^27.5.1
     lodash: ^4.17.21
