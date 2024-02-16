@@ -985,9 +985,7 @@ describe('KeyringController', () => {
                 AccountImportStrategy.privateKey,
                 ['123'],
               ),
-            ).rejects.toThrow(
-              'Expected private key to be an Uint8Array with length 32',
-            );
+            ).rejects.toThrow('Cannot import invalid private key.');
 
             await expect(
               controller.importAccountWithStrategy(
