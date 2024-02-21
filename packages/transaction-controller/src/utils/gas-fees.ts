@@ -13,8 +13,7 @@ import type {
 } from '@metamask/gas-fee-controller';
 import { GAS_ESTIMATE_TYPES } from '@metamask/gas-fee-controller';
 import type { Hex } from '@metamask/utils';
-import { createModuleLogger } from '@metamask/utils';
-import { addHexPrefix } from 'ethereumjs-util';
+import { add0x, createModuleLogger } from '@metamask/utils';
 
 import { projectLogger } from '../logger';
 import type {
@@ -317,7 +316,7 @@ async function getSuggestedGasFees(request: UpdateGasFeesRequest) {
   const gasPriceDecimal = (await query(ethQuery, 'gasPrice')) as number;
 
   const gasPrice = gasPriceDecimal
-    ? addHexPrefix(gasPriceDecimal.toString(16))
+    ? add0x(gasPriceDecimal.toString(16))
     : undefined;
 
   return { gasPrice };
