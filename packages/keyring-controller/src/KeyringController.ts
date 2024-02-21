@@ -1,5 +1,6 @@
 import type { TxData, TypedTransaction } from '@ethereumjs/tx';
 import { isValidPrivate, toBuffer, getBinarySize } from '@ethereumjs/util';
+import { Wallet, thirdparty as importers } from '@ethereumjs/wallet';
 import type {
   MetaMaskKeyring as QRKeyring,
   IKeyringState as IQRKeyringState,
@@ -38,7 +39,6 @@ import {
   remove0x,
 } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
-import Wallet, { thirdparty as importers } from 'ethereumjs-wallet';
 import type { Patch } from 'immer';
 
 import { KeyringControllerError } from './constants';
