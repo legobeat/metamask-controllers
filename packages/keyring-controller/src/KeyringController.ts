@@ -1077,7 +1077,7 @@ export class KeyringController extends BaseController<
         let wallet;
         const [input, password] = args;
         try {
-          wallet = importers.fromEtherWallet(input, password);
+          wallet = await importers.fromEtherWallet(input, password);
         } catch (e) {
           wallet = wallet || (await Wallet.fromV3(input, password, true));
         }
