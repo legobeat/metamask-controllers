@@ -1025,15 +1025,19 @@ export class KeyringController extends BaseController<
           privateKey = remove0x(prefixed);
           break;
         case 'json':
-          let wallet;
-          const [input, password] = args;
-          try {
-            wallet = importers.fromEtherWallet(input, password);
-          } catch (e) {
-            wallet = wallet || (await Wallet.fromV3(input, password, true));
+        {
+          const getWallet = async (): Promise<Wallet> => {
+            const [input, password] = args;
+            try {
+              return importers.fromEtherWallet(input, password);
+            } catch (e) {
+              return Wallet.fromV3(input, password, true);
+            }
           }
+          const wallet = await getWallet();
           privateKey = bytesToHex(wallet.getPrivateKey());
           break;
+        }
         default:
           throw new Error(`Unexpected import strategy: '${strategy}'`);
       }
