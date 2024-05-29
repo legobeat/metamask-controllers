@@ -8,9 +8,9 @@ import type {
   NetworkControllerStateChangeEvent,
   ProviderConfig,
 } from '@metamask/network-controller';
+import type { NonceLock, NonceTracker } from '@metamask/nonce-tracker';
 import type { Hex } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
-import type { NonceLock, NonceTracker } from 'nonce-tracker';
 
 import { createModuleLogger, projectLogger } from '../logger';
 import { EtherscanRemoteTransactionSource } from './EtherscanRemoteTransactionSource';
@@ -195,32 +195,36 @@ export class MultichainTrackingHelper {
   }: {
     networkClientId?: NetworkClientId;
     chainId?: Hex;
-  } = {}): EthQuery | undefined {
-    if (!this.#isMultichainEnabled || (!networkClientId && !chainId)) {
+  } = {}): EthQuery {
+    return new EthQuery(this.getProvider({ networkClientId, chainId }));
+  }
+
+  getProvider({
+    networkClientId,
+    chainId,
+  }: {
+    networkClientId?: NetworkClientId;
+    chainId?: Hex;
+  } = {}): Provider {
+    if (!this.#isMultichainEnabled) {
       const globalProvider = this.#getGlobalProviderAndBlockTracker()?.provider;
-      return globalProvider ? new EthQuery(globalProvider) : undefined;
-    }
-
-    let networkClient: NetworkClient | undefined;
-
-    if (networkClientId) {
-      try {
-        networkClient = this.#getNetworkClientById(networkClientId);
-      } catch (err) {
-        log('Failed to get network client by networkClientId', networkClientId);
+      if (!globalProvider) {
+        throw new Error(`Missing global provider`);
       }
+      return globalProvider;
     }
 
-    if (!networkClient && chainId) {
-      try {
-        networkClientId = this.#findNetworkClientIdByChainId(chainId);
-        networkClient = this.#getNetworkClientById(networkClientId);
-      } catch (err) {
-        log('Failed to get network client by chainId', chainId);
-      }
-    }
+    const networkClient = this.#getNetworkClient({
+      networkClientId,
+      chainId,
+    });
 
-    return networkClient ? new EthQuery(networkClient.provider) : undefined;
+    if (!networkClient?.provider) {
+      throw new Error(
+        `Missing provider for ${JSON.stringify({ chainId, networkClientId })}`,
+      );
+    }
+    return networkClient.provider;
   }
 
   /**
@@ -480,5 +484,33 @@ export class MultichainTrackingHelper {
       provider: globalProvider,
       blockTracker: globalBlockTracker,
     });
+  }
+
+  #getNetworkClient({
+    networkClientId,
+    chainId,
+  }: {
+    networkClientId?: NetworkClientId;
+    chainId?: Hex;
+  } = {}): NetworkClient | undefined {
+    let networkClient: NetworkClient | undefined;
+
+    if (networkClientId) {
+      try {
+        networkClient = this.#getNetworkClientById(networkClientId);
+      } catch (err) {
+        log('failed to get network client by networkClientId');
+      }
+    }
+    if (!networkClient && chainId) {
+      try {
+        const networkClientIdForChainId =
+          this.#findNetworkClientIdByChainId(chainId);
+        networkClient = this.#getNetworkClientById(networkClientIdForChainId);
+      } catch (err) {
+        log('failed to get network client by chainId');
+      }
+    }
+    return networkClient;
   }
 }

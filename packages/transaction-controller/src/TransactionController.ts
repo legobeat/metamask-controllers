@@ -20,8 +20,12 @@ import {
   convertHexToDecimal,
   NetworkType,
 } from '@metamask/controller-utils';
+import type { PollingBlockTracker } from '@metamask/eth-block-tracker';
 import EthQuery from '@metamask/eth-query';
-import type { GasFeeState } from '@metamask/gas-fee-controller';
+import type {
+  FetchGasFeeEstimateOptions,
+  GasFeeState,
+} from '@metamask/gas-fee-controller';
 import type {
   BlockTracker,
   NetworkClientId,
@@ -33,6 +37,11 @@ import type {
   NetworkControllerGetNetworkClientByIdAction,
 } from '@metamask/network-controller';
 import { NetworkClientType } from '@metamask/network-controller';
+import { NonceTracker } from '@metamask/nonce-tracker';
+import type {
+  NonceLock,
+  Transaction as NonceTrackerTransaction,
+} from '@metamask/nonce-tracker';
 import { errorCodes, rpcErrors, providerErrors } from '@metamask/rpc-errors';
 import type { Hex } from '@metamask/utils';
 import { add0x } from '@metamask/utils';
@@ -40,15 +49,13 @@ import { Mutex } from 'async-mutex';
 import { MethodRegistry } from 'eth-method-registry';
 import { EventEmitter } from 'events';
 import { cloneDeep, mapValues, merge, pickBy, sortBy, isEqual } from 'lodash';
-import { NonceTracker } from 'nonce-tracker';
-import type {
-  NonceLock,
-  Transaction as NonceTrackerTransaction,
-} from 'nonce-tracker';
 import { v1 as random } from 'uuid';
 
 import { DefaultGasFeeFlow } from './gas-flows/DefaultGasFeeFlow';
 import { LineaGasFeeFlow } from './gas-flows/LineaGasFeeFlow';
+import { OptimismLayer1GasFeeFlow } from './gas-flows/OptimismLayer1GasFeeFlow';
+import { ScrollLayer1GasFeeFlow } from './gas-flows/ScrollLayer1GasFeeFlow';
+import { TestGasFeeFlow } from './gas-flows/TestGasFeeFlow';
 import { EtherscanRemoteTransactionSource } from './helpers/EtherscanRemoteTransactionSource';
 import { GasFeePoller } from './helpers/GasFeePoller';
 import type { IncomingTransactionOptions } from './helpers/IncomingTransactionHelper';
@@ -69,20 +76,27 @@ import type {
   SecurityAlertResponse,
   GasFeeFlow,
   SimulationData,
+  GasFeeEstimates,
+  GasFeeFlowResponse,
 } from './types';
 import {
   TransactionEnvelopeType,
   TransactionType,
   TransactionStatus,
+  SimulationErrorCode,
 } from './types';
 import { validateConfirmedExternalTransaction } from './utils/external-transactions';
 import { addGasBuffer, estimateGas, updateGas } from './utils/gas';
 import { updateGasFees } from './utils/gas-fees';
+import { getGasFeeFlow } from './utils/gas-flow';
 import {
   addInitialHistorySnapshot,
   updateTransactionHistory,
 } from './utils/history';
-import { updateTransactionLayer1GasFee } from './utils/layer1-gas-fee-flow';
+import {
+  getTransactionLayer1GasFee,
+  updateTransactionLayer1GasFee,
+} from './utils/layer1-gas-fee-flow';
 import {
   getAndFormatTransactionsForNonceTracker,
   getNextNonce,
@@ -228,7 +242,7 @@ export type TransactionControllerActions = TransactionControllerGetStateAction;
  * @property isResubmitEnabled - Whether transaction publishing is automatically retried.
  */
 export type PendingTransactionOptions = {
-  isResubmitEnabled?: boolean;
+  isResubmitEnabled?: () => boolean;
 };
 
 /**
@@ -277,10 +291,12 @@ export type TransactionControllerOptions = {
     address: string,
     chainId?: string,
   ) => NonceTrackerTransaction[];
-  getGasFeeEstimates?: () => Promise<GasFeeState>;
   getGlobalProviderAndBlockTracker: () =>
     | { provider: Provider; blockTracker: BlockTracker }
     | undefined;
+  getGasFeeEstimates?: (
+    options: FetchGasFeeEstimateOptions,
+  ) => Promise<GasFeeState>;
   getNetworkClientRegistry: NetworkController['getNetworkClientRegistry'];
   getNetworkState: () => NetworkState;
   getPermittedAccounts: (origin?: string) => Promise<string[]>;
@@ -300,6 +316,7 @@ export type TransactionControllerOptions = {
     transactionMeta?: TransactionMeta,
   ) => Promise<TypedTransaction>;
   state?: Partial<TransactionControllerState>;
+  testGasFeeFlows?: boolean;
   transactionHistoryLimit: number;
   hooks: {
     afterSign?: (
@@ -443,6 +460,14 @@ export type TransactionControllerTransactionNewSwapEvent = {
 };
 
 /**
+ * Represents the `TransactionController:transactionNewSwapApproval` event.
+ */
+export type TransactionControllerTransactionNewSwapAndSendEvent = {
+  type: `${typeof controllerName}:transactionNewSwapAndSend`;
+  payload: [{ transactionMeta: TransactionMeta }];
+};
+
+/**
  * Represents the `TransactionController:transactionPublishingSkipped` event.
  */
 export type TransactionControllerTransactionPublishingSkipped = {
@@ -511,6 +536,7 @@ export type TransactionControllerEvents =
   | TransactionControllerTransactionFinishedEvent
   | TransactionControllerTransactionNewSwapApprovalEvent
   | TransactionControllerTransactionNewSwapEvent
+  | TransactionControllerTransactionNewSwapAndSendEvent
   | TransactionControllerTransactionPublishingSkipped
   | TransactionControllerTransactionRejectedEvent
   | TransactionControllerTransactionStatusUpdatedEvent
@@ -566,7 +592,7 @@ export class TransactionController extends BaseController<
 
   private readonly isSendFlowHistoryDisabled: boolean;
 
-  private readonly inProcessOfSigning: Set<string> = new Set();
+  private readonly approvingTransactionIds: Set<string> = new Set();
 
   private readonly mutex = new Mutex();
 
@@ -582,7 +608,9 @@ export class TransactionController extends BaseController<
     networkClientId?: NetworkClientId,
   ) => Promise<boolean>;
 
-  private readonly getGasFeeEstimates: () => Promise<GasFeeState>;
+  private readonly getGasFeeEstimates: (
+    options: FetchGasFeeEstimateOptions,
+  ) => Promise<GasFeeState>;
 
   private readonly getPermittedAccounts: (origin?: string) => Promise<string[]>;
 
@@ -617,6 +645,8 @@ export class TransactionController extends BaseController<
         blockTracker: BlockTracker;
       }
     | undefined;
+
+  #testGasFeeFlows: boolean;
 
   private readonly afterSign: (
     transactionMeta: TransactionMeta,
@@ -724,6 +754,7 @@ export class TransactionController extends BaseController<
    * @param options.securityProviderRequest - A function for verifying a transaction, whether it is malicious or not.
    * @param options.sign - Function used to sign transactions.
    * @param options.state - Initial state to set on this controller.
+   * @param options.testGasFeeFlows - Whether to use the test gas fee flow.
    * @param options.transactionHistoryLimit - Transaction history limit.
    * @param options.hooks - The controller hooks.
    */
@@ -750,6 +781,7 @@ export class TransactionController extends BaseController<
     securityProviderRequest,
     sign,
     state,
+    testGasFeeFlows,
     transactionHistoryLimit = 40,
     hooks,
   }: TransactionControllerOptions) {
@@ -787,6 +819,7 @@ export class TransactionController extends BaseController<
     this.#isSimulationEnabled = isSimulationEnabled ?? (() => true);
     this.#getGlobalProviderAndBlockTracker = getGlobalProviderAndBlockTracker;
     this.sign = sign;
+    this.#testGasFeeFlows = testGasFeeFlows === true;
 
     this.afterSign = hooks?.afterSign ?? (() => true);
     this.beforeApproveOnInit = hooks?.beforeApproveOnInit ?? (() => true);
@@ -800,17 +833,19 @@ export class TransactionController extends BaseController<
     this.publish =
       hooks?.publish ?? (() => Promise.resolve({ transactionHash: undefined }));
 
+    const findNetworkClientIdByChainId = (chainId: Hex) => {
+      return this.messagingSystem.call(
+        `NetworkController:findNetworkClientIdByChainId`,
+        chainId,
+      );
+    };
+
     this.#multichainTrackingHelper = new MultichainTrackingHelper({
       isMultichainEnabled,
       incomingTransactionOptions: incomingTransactions,
-      findNetworkClientIdByChainId: (chainId: Hex) => {
-        return this.messagingSystem.call(
-          `NetworkController:findNetworkClientIdByChainId`,
-          chainId,
-        );
-      },
       getGlobalProviderAndBlockTracker,
       getGlobalProviderConfig: () => getNetworkState()?.providerConfig,
+      findNetworkClientIdByChainId,
       getNetworkClientById: ((networkClientId: NetworkClientId) => {
         return this.messagingSystem.call(
           `NetworkController:getNetworkClientById`,
@@ -862,14 +897,14 @@ export class TransactionController extends BaseController<
     this.layer1GasFeeFlows = this.#getLayer1GasFeeFlows();
 
     const gasFeePoller = new GasFeePoller({
-      // Default gas fee polling is not yet supported by the clients
-      gasFeeFlows: this.gasFeeFlows.slice(0, -1),
-      getEthQuery: (chainId, networkClientId) =>
-        this.#multichainTrackingHelper.getEthQuery({
+      findNetworkClientIdByChainId,
+      gasFeeFlows: this.gasFeeFlows,
+      getGasFeeControllerEstimates: this.getGasFeeEstimates,
+      getProvider: (chainId, networkClientId) =>
+        this.#multichainTrackingHelper.getProvider({
           networkClientId,
           chainId,
         }),
-      getGasFeeControllerEstimates: this.getGasFeeEstimates,
       getTransactions: () => this.state.transactions,
       layer1GasFeeFlows: this.layer1GasFeeFlows,
       onStateChange: (listener) => {
@@ -880,8 +915,9 @@ export class TransactionController extends BaseController<
       },
     });
 
-    gasFeePoller.hub.on('transaction-updated', (transactionMeta) =>
-      this.#updateTransactionInternal(transactionMeta, { skipHistory: true }),
+    gasFeePoller.hub.on(
+      'transaction-updated',
+      this.#onGasFeePollerTransactionUpdate.bind(this),
     );
 
     // when transactionsController state changes
@@ -898,6 +934,8 @@ export class TransactionController extends BaseController<
       this.pendingTransactionTracker.startIfPendingTransactions();
       this.initApprovedTransactions();
     });
+
+    this.#checkForPendingTransactionAndStartPolling();
   }
 
   /**
@@ -967,7 +1005,7 @@ export class TransactionController extends BaseController<
       sendFlowHistory,
       swaps = {},
       type,
-      networkClientId,
+      networkClientId: requestNetworkClientId,
     }: {
       actionId?: string;
       deviceConfirmedOn?: WalletDevice;
@@ -988,13 +1026,16 @@ export class TransactionController extends BaseController<
 
     txParams = normalizeTransactionParams(txParams);
     if (
-      networkClientId &&
-      !this.#multichainTrackingHelper.has(networkClientId)
+      requestNetworkClientId &&
+      !this.#multichainTrackingHelper.has(requestNetworkClientId)
     ) {
       throw new Error(
         'The networkClientId for this transaction could not be found',
       );
     }
+
+    const networkClientId =
+      requestNetworkClientId ?? this.#getGlobalNetworkClientId();
 
     const isEIP1559Compatible = await this.getEIP1559Compatibility(
       networkClientId,
@@ -1084,8 +1125,12 @@ export class TransactionController extends BaseController<
 
       this.addMetadata(addedTransactionMeta);
 
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      this.#updateSimulationData(addedTransactionMeta);
+      if (requireApproval !== false) {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        this.#updateSimulationData(addedTransactionMeta);
+      } else {
+        log('Skipping simulation as approval not required');
+      }
 
       this.messagingSystem.publish(
         `${controllerName}:unapprovedTransactionAdded`,
@@ -1343,9 +1388,7 @@ export class TransactionController extends BaseController<
 
     log('Creating speed up transaction', transactionId, gasValues);
 
-    const transactionMeta = this.state.transactions.find(
-      ({ id }) => id === transactionId,
-    );
+    const transactionMeta = this.getTransaction(transactionId);
     /* istanbul ignore next */
     if (!transactionMeta) {
       return;
@@ -1424,7 +1467,7 @@ export class TransactionController extends BaseController<
       transactionMeta.txParams.from,
     );
 
-    const transactionMetaWithRsv = await this.updateTransactionMetaRSV(
+    const transactionMetaWithRsv = this.updateTransactionMetaRSV(
       transactionMeta,
       signedTx,
     );
@@ -1561,10 +1604,12 @@ export class TransactionController extends BaseController<
    * @param note - A note or update reason to include in the transaction history.
    */
   updateTransaction(transactionMeta: TransactionMeta, note: string) {
-    this.#updateTransactionInternal(transactionMeta, {
-      note,
-      skipHistory: this.isHistoryDisabled,
-    });
+    const { id: transactionId } = transactionMeta;
+
+    this.#updateTransactionInternal(
+      { transactionId, note, skipHistory: this.isHistoryDisabled },
+      () => ({ ...transactionMeta }),
+    );
   }
 
   /**
@@ -1957,10 +2002,11 @@ export class TransactionController extends BaseController<
     ) as TransactionParams;
 
     const updatedTransaction = merge({}, transactionMeta, editableParams);
-    const ethQuery = this.#getEthQueryOrThrow({
-      networkClientId: transactionMeta.networkClientId,
+    const provider = this.#multichainTrackingHelper.getProvider({
       chainId: transactionMeta.chainId,
+      networkClientId: transactionMeta.networkClientId,
     });
+    const ethQuery = new EthQuery(provider);
     const { type } = await determineTransactionType(
       updatedTransaction.txParams,
       ethQuery,
@@ -1969,8 +2015,8 @@ export class TransactionController extends BaseController<
     updatedTransaction.type = type;
 
     await updateTransactionLayer1GasFee({
-      ethQuery,
       layer1GasFeeFlows: this.layer1GasFeeFlows,
+      provider,
       transactionMeta: updatedTransaction,
     });
 
@@ -2024,11 +2070,10 @@ export class TransactionController extends BaseController<
     });
     const initialTxAsSerializedHex = bufferToHex(initialTxAsEthTx.serialize());
 
-    if (this.inProcessOfSigning.has(initialTxAsSerializedHex)) {
+    if (this.approvingTransactionIds.has(initialTxAsSerializedHex)) {
       return '';
     }
-
-    this.inProcessOfSigning.add(initialTxAsSerializedHex);
+    this.approvingTransactionIds.add(initialTxAsSerializedHex);
 
     let rawTransactions, nonceLock;
     try {
@@ -2061,7 +2106,7 @@ export class TransactionController extends BaseController<
       throw err;
     } finally {
       nonceLock?.releaseLock();
-      this.inProcessOfSigning.delete(initialTxAsSerializedHex);
+      this.approvingTransactionIds.delete(initialTxAsSerializedHex);
     }
     return rawTransactions;
   }
@@ -2116,13 +2161,13 @@ export class TransactionController extends BaseController<
       {},
       transactionMeta,
       pickBy({ hash, status }),
-    );
+    ) as TransactionMeta;
 
-    if (status === TransactionStatus.submitted) {
+    if (updatedTransactionMeta.status === TransactionStatus.submitted) {
       updatedTransactionMeta.submittedTime = new Date().getTime();
     }
 
-    if (status === TransactionStatus.failed) {
+    if (updatedTransactionMeta.status === TransactionStatus.failed) {
       updatedTransactionMeta.error = normalizeTxError(new Error(errorMessage));
     }
 
@@ -2138,6 +2183,10 @@ export class TransactionController extends BaseController<
     ) {
       this.messagingSystem.publish(
         `${controllerName}:transactionFinished`,
+        updatedTransactionMeta,
+      );
+      this.#internalEvents.emit(
+        `${updatedTransactionMeta.id}:finished`,
         updatedTransactionMeta,
       );
     }
@@ -2298,6 +2347,80 @@ export class TransactionController extends BaseController<
     return filteredTransactions;
   }
 
+  async estimateGasFee({
+    transactionParams,
+    chainId,
+    networkClientId: requestNetworkClientId,
+  }: {
+    transactionParams: TransactionParams;
+    chainId?: Hex;
+    networkClientId?: NetworkClientId;
+  }): Promise<GasFeeFlowResponse> {
+    const networkClientId = this.#getNetworkClientId({
+      networkClientId: requestNetworkClientId,
+      chainId,
+    });
+
+    const transactionMeta = {
+      txParams: transactionParams,
+      chainId,
+      networkClientId,
+    } as TransactionMeta;
+
+    // Guaranteed as the default gas fee flow matches all transactions.
+    const gasFeeFlow = getGasFeeFlow(
+      transactionMeta,
+      this.gasFeeFlows,
+    ) as GasFeeFlow;
+
+    const ethQuery = this.#multichainTrackingHelper.getEthQuery({
+      networkClientId,
+      chainId,
+    });
+
+    const gasFeeControllerData = await this.getGasFeeEstimates({
+      networkClientId,
+    });
+
+    return gasFeeFlow.getGasFees({
+      ethQuery,
+      gasFeeControllerData,
+      transactionMeta,
+    });
+  }
+
+  /**
+   * Determine the layer 1 gas fee for the given transaction parameters.
+   *
+   * @param request - The request object.
+   * @param request.transactionParams - The transaction parameters to estimate the layer 1 gas fee for.
+   * @param request.chainId - The ID of the chain where the transaction will be executed.
+   * @param request.networkClientId - The ID of a specific network client to process the transaction.
+   */
+  async getLayer1GasFee({
+    transactionParams,
+    chainId,
+    networkClientId,
+  }: {
+    transactionParams: TransactionParams;
+    chainId?: Hex;
+    networkClientId?: NetworkClientId;
+  }): Promise<Hex | undefined> {
+    const provider = this.#multichainTrackingHelper.getProvider({
+      networkClientId,
+      chainId,
+    });
+
+    return await getTransactionLayer1GasFee({
+      layer1GasFeeFlows: this.layer1GasFeeFlows,
+      provider,
+      transactionMeta: {
+        txParams: transactionParams,
+        chainId,
+      } as TransactionMeta,
+    });
+  }
+
   private async signExternalTransaction(
     chainId: Hex,
     transactionParams: TransactionParams,
@@ -2386,12 +2509,12 @@ export class TransactionController extends BaseController<
 
     const { networkClientId, chainId } = transactionMeta;
 
-    const isCustomNetwork = networkClientId
-      ? this.messagingSystem.call(
-          `NetworkController:getNetworkClientById`,
-          networkClientId,
-        ).configuration.type === NetworkClientType.Custom
-      : this.getNetworkState().providerConfig.type === NetworkType.rpc;
+    const isCustomNetwork = this.#isCustomNetwork(networkClientId);
+
+    const provider = this.#multichainTrackingHelper.getProvider({
+      networkClientId,
+      chainId,
+    });
 
     await updateGas({
       ethQuery,
@@ -2410,8 +2533,8 @@ export class TransactionController extends BaseController<
     });
 
     await updateTransactionLayer1GasFee({
-      ethQuery,
       layer1GasFeeFlows: this.layer1GasFeeFlows,
+      provider,
       transactionMeta,
     });
   }
@@ -2539,87 +2662,77 @@ export class TransactionController extends BaseController<
    * @param transactionId - The ID of the transaction to approve.
    */
   private async approveTransaction(transactionId: string) {
-    const { transactions } = this.state;
-    const releaseLock = await this.mutex.acquire();
-    const index = transactions.findIndex(({ id }) => transactionId === id);
-    const transactionMeta = transactions[index];
-    const updatedTransactionMeta = cloneDeep(transactionMeta);
+    const cleanupTasks = new Array<() => void>();
+    cleanupTasks.push(await this.mutex.acquire());
 
-    const {
-      txParams: { from },
-      networkClientId,
-    } = transactionMeta;
-
-    let releaseNonceLock: (() => void) | undefined;
+    let transactionMeta = this.getTransactionOrThrow(transactionId);
 
     try {
       if (!this.sign) {
-        releaseLock();
         this.failTransaction(
           transactionMeta,
           new Error('No sign method defined.'),
         );
         return ApprovalState.NotApproved;
       } else if (!transactionMeta.chainId) {
-        releaseLock();
         this.failTransaction(transactionMeta, new Error('No chainId defined.'));
         return ApprovalState.NotApproved;
       }
 
-      if (this.inProcessOfSigning.has(transactionId)) {
+      if (this.approvingTransactionIds.has(transactionId)) {
         log('Skipping approval as signing in progress', transactionId);
         return ApprovalState.NotApproved;
       }
-
-      const getNonceLock = (address: string) =>
-        this.#multichainTrackingHelper.getNonceLock(address, networkClientId);
+      this.approvingTransactionIds.add(transactionId);
+      cleanupTasks.push(() =>
+        this.approvingTransactionIds.delete(transactionId),
+      );
 
       const [nonce, releaseNonce] = await getNextNonce(
         transactionMeta,
-        getNonceLock,
+        (address: string) =>
+          this.#multichainTrackingHelper.getNonceLock(
+            address,
+            transactionMeta.networkClientId,
+          ),
       );
 
-      releaseNonceLock = releaseNonce;
+      // must set transaction to submitted/failed before releasing lock
+      releaseNonce && cleanupTasks.push(releaseNonce);
 
-      updatedTransactionMeta.status = TransactionStatus.approved;
-      updatedTransactionMeta.txParams = {
-        ...updatedTransactionMeta.txParams,
-        nonce,
-        chainId: transactionMeta.chainId,
-      };
+      transactionMeta = this.#updateTransactionInternal(
+        {
+          transactionId,
+          note: 'TransactionController#approveTransaction - Transaction approved',
+        },
+        (draftTxMeta) => {
+          const { txParams, chainId } = draftTxMeta;
 
-      const baseTxParams = {
-        ...updatedTransactionMeta.txParams,
-        gasLimit: updatedTransactionMeta.txParams.gas,
-      };
-
-      this.updateTransaction(
-        updatedTransactionMeta,
-        'TransactionController#approveTransaction - Transaction approved',
+          draftTxMeta.status = TransactionStatus.approved;
+          draftTxMeta.txParams = {
+            ...txParams,
+            nonce,
+            chainId,
+            gasLimit: txParams.gas,
+            ...(isEIP1559Transaction(txParams) && {
+              type: TransactionEnvelopeType.feeMarket,
+            }),
+          };
+        },
       );
 
-      this.onTransactionStatusChange(updatedTransactionMeta);
-
-      const isEIP1559 = isEIP1559Transaction(updatedTransactionMeta.txParams);
-
-      const txParams: TransactionParams = isEIP1559
-        ? {
-            ...baseTxParams,
-            estimatedBaseFee: updatedTransactionMeta.txParams.estimatedBaseFee,
-            type: TransactionEnvelopeType.feeMarket,
-          }
-        : baseTxParams;
+      this.onTransactionStatusChange(transactionMeta);
 
       const rawTx = await this.signTransaction(
-        updatedTransactionMeta,
-        txParams,
+        transactionMeta,
+        transactionMeta.txParams,
       );
 
-      if (!this.beforePublish(updatedTransactionMeta)) {
+      if (!this.beforePublish(transactionMeta)) {
         log('Skipping publishing transaction based on hook');
         this.messagingSystem.publish(
           `${controllerName}:transactionPublishingSkipped`,
-          updatedTransactionMeta,
+          transactionMeta,
         );
         return ApprovalState.SkippedViaBeforePublishHook;
       }
@@ -2633,20 +2746,19 @@ export class TransactionController extends BaseController<
         chainId: transactionMeta.chainId,
       });
 
-      if (transactionMeta.type === TransactionType.swap) {
+      let preTxBalance: string | undefined;
+      const shouldUpdatePreTxBalance =
+        transactionMeta.type === TransactionType.swap;
+
+      if (shouldUpdatePreTxBalance) {
         log('Determining pre-transaction balance');
 
-        const preTxBalance = await query(ethQuery, 'getBalance', [from]);
-
-        updatedTransactionMeta.preTxBalance = preTxBalance;
-
-        log(
-          'Updated pre-transaction balance',
-          updatedTransactionMeta.preTxBalance,
-        );
+        preTxBalance = await query(ethQuery, 'getBalance', [
+          transactionMeta.txParams.from,
+        ]);
       }
 
-      log('Publishing transaction', txParams);
+      log('Publishing transaction', transactionMeta.txParams);
 
       let { transactionHash: hash } = await this.publish(
         transactionMeta,
@@ -2659,29 +2771,33 @@ export class TransactionController extends BaseController<
 
       log('Publish successful', hash);
 
-      updatedTransactionMeta.hash = hash;
-      updatedTransactionMeta.status = TransactionStatus.submitted;
-      updatedTransactionMeta.submittedTime = new Date().getTime();
-
-      this.updateTransaction(
-        updatedTransactionMeta,
-        'TransactionController#approveTransaction - Transaction submitted',
+      transactionMeta = this.#updateTransactionInternal(
+        {
+          transactionId,
+          note: 'TransactionController#approveTransaction - Transaction submitted',
+        },
+        (draftTxMeta) => {
+          draftTxMeta.hash = hash;
+          draftTxMeta.status = TransactionStatus.submitted;
+          draftTxMeta.submittedTime = new Date().getTime();
+          if (shouldUpdatePreTxBalance) {
+            draftTxMeta.preTxBalance = preTxBalance;
+            log('Updated pre-transaction balance', preTxBalance);
+          }
+        },
       );
 
       this.messagingSystem.publish(`${controllerName}:transactionSubmitted`, {
-        transactionMeta: updatedTransactionMeta,
+        transactionMeta,
       });
 
       this.messagingSystem.publish(
         `${controllerName}:transactionFinished`,
-        updatedTransactionMeta,
+        transactionMeta,
       );
-      this.#internalEvents.emit(
-        `${updatedTransactionMeta.id}:finished`,
-        updatedTransactionMeta,
-      );
+      this.#internalEvents.emit(`${transactionId}:finished`, transactionMeta);
 
-      this.onTransactionStatusChange(updatedTransactionMeta);
+      this.onTransactionStatusChange(transactionMeta);
       return ApprovalState.Approved;
       // TODO: Replace `any` with type
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2689,10 +2805,7 @@ export class TransactionController extends BaseController<
       this.failTransaction(transactionMeta, error);
       return ApprovalState.NotApproved;
     } finally {
-      this.inProcessOfSigning.delete(transactionId);
-      // must set transaction to submitted/failed before releasing lock
-      releaseNonceLock?.();
-      releaseLock();
+      cleanupTasks.forEach((task) => task());
     }
   }
 
@@ -2840,9 +2953,24 @@ export class TransactionController extends BaseController<
     )) as Promise<AddResult>;
   }
 
-  private getTransaction(transactionId: string): TransactionMeta | undefined {
+  private getTransaction(
+    transactionId: string,
+  ): Readonly<TransactionMeta> | undefined {
     const { transactions } = this.state;
     return transactions.find(({ id }) => id === transactionId);
+  }
+
+  private getTransactionOrThrow(
+    transactionId: string,
+    errorMessagePrefix = 'TransactionController',
+  ): Readonly<TransactionMeta> {
+    const txMeta = this.getTransaction(transactionId);
+    if (!txMeta) {
+      throw new Error(
+        `${errorMessagePrefix}: No transaction found with id ${transactionId}`,
+      );
+    }
+    return txMeta;
   }
 
   private getApprovalId(txMeta: TransactionMeta) {
@@ -2864,15 +2992,18 @@ export class TransactionController extends BaseController<
     return { meta: transaction, isCompleted };
   }
 
-  private getChainId(networkClientId?: NetworkClientId): Hex | undefined {
-    if (networkClientId) {
-      return this.messagingSystem.call(
-        `NetworkController:getNetworkClientById`,
-        networkClientId,
-      ).configuration.chainId;
+  private getChainId(networkClientId?: NetworkClientId): Hex {
+    const globalChainId = this.#getGlobalChainId();
+    const globalNetworkClientId = this.#getGlobalNetworkClientId();
+
+    if (!networkClientId || networkClientId === globalNetworkClientId) {
+      return globalChainId;
     }
 
-    return this.getNetworkState()?.providerConfig.chainId;
+    return this.messagingSystem.call(
+      `NetworkController:getNetworkClientById`,
+      networkClientId,
+    ).configuration.chainId;
   }
 
   private prepareUnsignedEthTx(
@@ -3126,11 +3257,12 @@ export class TransactionController extends BaseController<
    *
    * @param transactionMeta - The TransactionMeta object to update.
    * @param signedTx - The encompassing type for all transaction types containing r, s, and v values.
+   * @returns The updated TransactionMeta object.
    */
-  private async updateTransactionMetaRSV(
+  private updateTransactionMetaRSV(
     transactionMeta: TransactionMeta,
     signedTx: TypedTransaction,
-  ): Promise<TransactionMeta> {
+  ): TransactionMeta {
     const transactionMetaWithRsv = cloneDeep(transactionMeta);
 
     for (const key of ['r', 's', 'v'] as const) {
@@ -3169,7 +3301,7 @@ export class TransactionController extends BaseController<
       txParams,
     );
 
-    this.inProcessOfSigning.add(transactionMeta.id);
+    this.approvingTransactionIds.add(transactionMeta.id);
 
     const signedTx = await new Promise<TypedTransaction>((resolve, reject) => {
       this.sign?.(
@@ -3202,7 +3334,7 @@ export class TransactionController extends BaseController<
     }
 
     const transactionMetaWithRsv = {
-      ...(await this.updateTransactionMetaRSV(transactionMeta, signedTx)),
+      ...this.updateTransactionMetaRSV(transactionMeta, signedTx),
       status: TransactionStatus.signed as const,
     };
 
@@ -3306,10 +3438,10 @@ export class TransactionController extends BaseController<
     chainId?: Hex;
   }): NonceTracker {
     return new NonceTracker({
-      // TODO: Replace `any` with type
+      // TODO: Fix types
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       provider: provider as any,
-      blockTracker,
+      blockTracker: blockTracker as PollingBlockTracker,
       getPendingTransactions: this.#getNonceTrackerPendingTransactions.bind(
         this,
         chainId,
@@ -3512,49 +3644,67 @@ export class TransactionController extends BaseController<
   }
 
   #getGasFeeFlows(): GasFeeFlow[] {
+    if (this.#testGasFeeFlows) {
+      return [new TestGasFeeFlow()];
+    }
+
     return [new LineaGasFeeFlow(), new DefaultGasFeeFlow()];
   }
 
   #getLayer1GasFeeFlows(): Layer1GasFeeFlow[] {
-    return [];
+    return [new OptimismLayer1GasFeeFlow(), new ScrollLayer1GasFeeFlow()];
   }
 
   #updateTransactionInternal(
-    transactionMeta: TransactionMeta,
-    { note, skipHistory }: { note?: string; skipHistory?: boolean },
-  ) {
-    const normalizedTransaction = {
-      ...transactionMeta,
-      txParams: normalizeTransactionParams(transactionMeta.txParams),
-    };
-
-    validateTxParams(normalizedTransaction.txParams);
-
-    const updatedTransactionParams = this.#checkIfTransactionParamsUpdated(
-      normalizedTransaction,
-    );
-
-    const transactionWithUpdatedHistory =
-      skipHistory === true
-        ? normalizedTransaction
-        : updateTransactionHistory(
-            normalizedTransaction,
-            note ?? 'Transaction updated',
-          );
+    {
+      transactionId,
+      note,
+      skipHistory,
+    }: { transactionId: string; note?: string; skipHistory?: boolean },
+    callback: (transactionMeta: TransactionMeta) => TransactionMeta | void,
+  ): Readonly<TransactionMeta> {
+    let updatedTransactionParams: (keyof TransactionParams)[] = [];
 
     this.update((state) => {
       const index = state.transactions.findIndex(
-        ({ id }) => transactionMeta.id === id,
+        ({ id }) => id === transactionId,
       );
-      state.transactions[index] = transactionWithUpdatedHistory;
+
+      let transactionMeta = state.transactions[index];
+
+      // eslint-disable-next-line n/callback-return
+      transactionMeta = callback(transactionMeta) ?? transactionMeta;
+
+      transactionMeta.txParams = normalizeTransactionParams(
+        transactionMeta.txParams,
+      );
+
+      validateTxParams(transactionMeta.txParams);
+
+      updatedTransactionParams =
+        this.#checkIfTransactionParamsUpdated(transactionMeta);
+
+      if (skipHistory !== true) {
+        transactionMeta = updateTransactionHistory(
+          transactionMeta,
+          note ?? 'Transaction updated',
+        );
+      }
+      state.transactions[index] = transactionMeta;
     });
+
+    const transactionMeta = this.getTransaction(
+      transactionId,
+    ) as TransactionMeta;
 
     if (updatedTransactionParams.length > 0) {
       this.#onTransactionParamsUpdated(
-        normalizedTransaction,
+        transactionMeta,
         updatedTransactionParams,
       );
     }
+
+    return transactionMeta;
   }
 
   #checkIfTransactionParamsUpdated(newTransactionMeta: TransactionMeta) {
@@ -3599,21 +3749,23 @@ export class TransactionController extends BaseController<
   }
 
   async #updateSimulationData(transactionMeta: TransactionMeta) {
-    const { id, chainId, txParams } = transactionMeta;
+    const { id: transactionId, chainId, txParams } = transactionMeta;
     const { from, to, value, data } = txParams;
 
     let simulationData: SimulationData = {
       error: {
+        code: SimulationErrorCode.Disabled,
         message: 'Simulation disabled',
-        isReverted: false,
       },
       tokenBalanceChanges: [],
     };
 
     if (this.#isSimulationEnabled()) {
       this.#updateTransactionInternal(
-        { ...transactionMeta, simulationData: undefined },
-        { skipHistory: true },
+        { transactionId, skipHistory: true },
+        (txMeta) => {
+          txMeta.simulationData = undefined;
+        },
       );
 
       simulationData = await getSimulationData({
@@ -3625,24 +3777,105 @@ export class TransactionController extends BaseController<
       });
     }
 
-    const finalTransactionMeta = this.getTransaction(id);
+    const finalTransactionMeta = this.getTransaction(transactionId);
 
     if (!finalTransactionMeta) {
       log(
         'Cannot update simulation data as transaction not found',
-        id,
+        transactionId,
         simulationData,
       );
 
       return;
     }
 
-    this.updateTransaction(
-      { ...finalTransactionMeta, simulationData },
-      'TransactionController#updateSimulationData - Update simulation data',
+    this.#updateTransactionInternal(
+      {
+        transactionId,
+        note: 'TransactionController#updateSimulationData - Update simulation data',
+      },
+      (txMeta) => {
+        txMeta.simulationData = simulationData;
+      },
     );
 
-    log('Updated simulation data', id, simulationData);
+    log('Updated simulation data', transactionId, simulationData);
+  }
+
+  #onGasFeePollerTransactionUpdate({
+    transactionId,
+    gasFeeEstimates,
+    gasFeeEstimatesLoaded,
+    layer1GasFee,
+  }: {
+    transactionId: string;
+    gasFeeEstimates?: GasFeeEstimates;
+    gasFeeEstimatesLoaded?: boolean;
+    layer1GasFee?: Hex;
+  }) {
+    this.#updateTransactionInternal(
+      { transactionId, skipHistory: true },
+      (txMeta) => {
+        if (gasFeeEstimates) {
+          txMeta.gasFeeEstimates = gasFeeEstimates;
+        }
+
+        if (gasFeeEstimatesLoaded !== undefined) {
+          txMeta.gasFeeEstimatesLoaded = gasFeeEstimatesLoaded;
+        }
+
+        if (layer1GasFee) {
+          txMeta.layer1GasFee = layer1GasFee;
+        }
+      },
+    );
+  }
+
+  #getNetworkClientId({
+    networkClientId: requestNetworkClientId,
+    chainId,
+  }: {
+    networkClientId?: NetworkClientId;
+    chainId?: Hex;
+  }) {
+    const globalChainId = this.#getGlobalChainId();
+    const globalNetworkClientId = this.#getGlobalNetworkClientId();
+
+    if (requestNetworkClientId) {
+      return requestNetworkClientId;
+    }
+
+    if (!chainId || chainId === globalChainId) {
+      return globalNetworkClientId;
+    }
+
+    return this.messagingSystem.call(
+      `NetworkController:findNetworkClientIdByChainId`,
+      chainId,
+    );
+  }
+
+  #getGlobalNetworkClientId() {
+    return this.getNetworkState().selectedNetworkClientId;
+  }
+
+  #getGlobalChainId() {
+    return this.getNetworkState().providerConfig.chainId;
+  }
+
+  #isCustomNetwork(networkClientId?: NetworkClientId) {
+    const globalNetworkClientId = this.#getGlobalNetworkClientId();
+
+    if (!networkClientId || networkClientId === globalNetworkClientId) {
+      return this.getNetworkState().providerConfig.type === NetworkType.rpc;
+    }
+
+    return (
+      this.messagingSystem.call(
+        `NetworkController:getNetworkClientById`,
+        networkClientId,
+      ).configuration.type === NetworkClientType.Custom
+    );
   }
 
   #getEthQueryOrThrow({
