@@ -1024,8 +1024,7 @@ export class KeyringController extends BaseController<
 
           privateKey = remove0x(prefixed);
           break;
-        case 'json':
-        {
+        case 'json': {
           const getWallet = async (): Promise<Wallet> => {
             const [input, password] = args;
             try {
@@ -1033,7 +1032,7 @@ export class KeyringController extends BaseController<
             } catch (e) {
               return Wallet.fromV3(input, password, true);
             }
-          }
+          };
           const wallet = await getWallet();
           privateKey = bytesToHex(wallet.getPrivateKey());
           break;
