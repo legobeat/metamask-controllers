@@ -326,92 +326,94 @@ type MockNetwork = {
   subscribe: (listener: (state: NetworkState) => void) => void;
 };
 
-const MOCK_NETWORK: MockNetwork = {
-  chainId: ChainId.goerli,
-  provider: HTTP_PROVIDERS.goerli,
-  blockTracker: buildMockBlockTracker('0x102833C', HTTP_PROVIDERS.goerli),
-  state: {
-    selectedNetworkClientId: NetworkType.goerli,
-    networksMetadata: {
-      [NetworkType.goerli]: {
-        EIPS: { 1559: false },
-        status: NetworkStatus.Available,
+const MOCK_NETWORKS: Record<string, MockNetwork> = {
+  goerli: {
+    chainId: ChainId.goerli,
+    provider: HTTP_PROVIDERS.goerli,
+    blockTracker: buildMockBlockTracker('0x102833C', HTTP_PROVIDERS.goerli),
+    state: {
+      selectedNetworkClientId: NetworkType.goerli,
+      networksMetadata: {
+        [NetworkType.goerli]: {
+          EIPS: { 1559: false },
+          status: NetworkStatus.Available,
+        },
       },
-    },
-    providerConfig: {
-      type: NetworkType.goerli,
-      chainId: ChainId.goerli,
-      ticker: NetworksTicker.goerli,
-    },
-    networkConfigurations: {},
-  },
-  subscribe: () => undefined,
-};
-
-const MOCK_MAINNET_NETWORK: MockNetwork = {
-  chainId: ChainId.mainnet,
-  provider: HTTP_PROVIDERS.mainnet,
-  blockTracker: buildMockBlockTracker('0x102833C', HTTP_PROVIDERS.mainnet),
-  state: {
-    selectedNetworkClientId: NetworkType.mainnet,
-    networksMetadata: {
-      [NetworkType.mainnet]: {
-        EIPS: { 1559: false },
-        status: NetworkStatus.Available,
+      providerConfig: {
+        type: NetworkType.goerli,
+        chainId: ChainId.goerli,
+        ticker: NetworksTicker.goerli,
       },
+      networkConfigurations: {},
     },
-    providerConfig: {
-      type: NetworkType.mainnet,
-      chainId: ChainId.mainnet,
-      ticker: NetworksTicker.mainnet,
-    },
-    networkConfigurations: {},
+    subscribe: () => undefined,
   },
-  subscribe: () => undefined,
-};
-
-const MOCK_LINEA_MAINNET_NETWORK: MockNetwork = {
-  chainId: ChainId['linea-mainnet'],
-  provider: HTTP_PROVIDERS.linea,
-  blockTracker: buildMockBlockTracker('0xA6EDFC', HTTP_PROVIDERS.linea),
-  state: {
-    selectedNetworkClientId: NetworkType['linea-mainnet'],
-    networksMetadata: {
-      [NetworkType['linea-mainnet']]: {
-        EIPS: { 1559: false },
-        status: NetworkStatus.Available,
+  mainnet: {
+    chainId: ChainId.mainnet,
+    provider: HTTP_PROVIDERS.mainnet,
+    blockTracker: buildMockBlockTracker('0x102833C', HTTP_PROVIDERS.mainnet),
+    state: {
+      selectedNetworkClientId: NetworkType.mainnet,
+      networksMetadata: {
+        [NetworkType.mainnet]: {
+          EIPS: { 1559: false },
+          status: NetworkStatus.Available,
+        },
       },
-    },
-    providerConfig: {
-      type: NetworkType['linea-mainnet'],
-      chainId: ChainId['linea-mainnet'],
-      ticker: NetworksTicker['linea-mainnet'],
-    },
-    networkConfigurations: {},
-  },
-  subscribe: () => undefined,
-};
-
-const MOCK_LINEA_GOERLI_NETWORK: MockNetwork = {
-  chainId: ChainId['linea-goerli'],
-  provider: HTTP_PROVIDERS.linea_goerli,
-  blockTracker: buildMockBlockTracker('0xA6EDFC', HTTP_PROVIDERS.linea_goerli),
-  state: {
-    selectedNetworkClientId: NetworkType['linea-goerli'],
-    networksMetadata: {
-      [NetworkType['linea-goerli']]: {
-        EIPS: { 1559: false },
-        status: NetworkStatus.Available,
+      providerConfig: {
+        type: NetworkType.mainnet,
+        chainId: ChainId.mainnet,
+        ticker: NetworksTicker.mainnet,
       },
+      networkConfigurations: {},
     },
-    providerConfig: {
-      type: NetworkType['linea-goerli'],
-      chainId: ChainId['linea-goerli'],
-      ticker: NetworksTicker['linea-goerli'],
-    },
-    networkConfigurations: {},
+    subscribe: () => undefined,
   },
-  subscribe: () => undefined,
+  linea: {
+    chainId: ChainId['linea-mainnet'],
+    provider: HTTP_PROVIDERS.linea,
+    blockTracker: buildMockBlockTracker('0xA6EDFC', HTTP_PROVIDERS.linea),
+    state: {
+      selectedNetworkClientId: NetworkType['linea-mainnet'],
+      networksMetadata: {
+        [NetworkType['linea-mainnet']]: {
+          EIPS: { 1559: false },
+          status: NetworkStatus.Available,
+        },
+      },
+      providerConfig: {
+        type: NetworkType['linea-mainnet'],
+        chainId: ChainId['linea-mainnet'],
+        ticker: NetworksTicker['linea-mainnet'],
+      },
+      networkConfigurations: {},
+    },
+    subscribe: () => undefined,
+  },
+  linea_goerli: {
+    chainId: ChainId['linea-goerli'],
+    provider: HTTP_PROVIDERS.linea_goerli,
+    blockTracker: buildMockBlockTracker(
+      '0xA6EDFC',
+      HTTP_PROVIDERS.linea_goerli,
+    ),
+    state: {
+      selectedNetworkClientId: NetworkType['linea-goerli'],
+      networksMetadata: {
+        [NetworkType['linea-goerli']]: {
+          EIPS: { 1559: false },
+          status: NetworkStatus.Available,
+        },
+      },
+      providerConfig: {
+        type: NetworkType['linea-goerli'],
+        chainId: ChainId['linea-goerli'],
+        ticker: NetworksTicker['linea-goerli'],
+      },
+      networkConfigurations: {},
+    },
+    subscribe: () => undefined,
+  },
 };
 
 const ACCOUNT_MOCK = '0x6bf137f335ea1b8f193b8f6ea92561a60d23a207';
@@ -432,7 +434,6 @@ const INTERNAL_ACCOUNT_MOCK = {
 const ACCOUNT_2_MOCK = '0x08f137f335ea1b8f193b8f6ea92561a60d23a211';
 const NONCE_MOCK = 12;
 const ACTION_ID_MOCK = '123456';
-const CHAIN_ID_MOCK = MOCK_NETWORK.chainId;
 const NETWORK_CLIENT_ID_MOCK = 'networkClientIdMock';
 
 const TRANSACTION_META_MOCK = {
@@ -582,7 +583,8 @@ describe('TransactionController', () => {
   } = {}) {
     let networkState = {
       ...defaultNetworkState,
-      selectedNetworkClientId: MOCK_NETWORK.state.selectedNetworkClientId,
+      selectedNetworkClientId:
+        MOCK_NETWORKS.goerli.state.selectedNetworkClientId,
       ...network.state,
     };
     const provider = network.provider ?? new FakeProvider();
@@ -952,7 +954,7 @@ describe('TransactionController', () => {
               transactions: [
                 {
                   ...TRANSACTION_META_MOCK,
-                  chainId: MOCK_NETWORK.chainId,
+                  chainId: MOCK_NETWORKS.goerli.chainId,
                   status: TransactionStatus.submitted,
                 },
               ],
@@ -1360,7 +1362,7 @@ describe('TransactionController', () => {
 
       expect(updateSwapsTransactionMock).toHaveBeenCalledTimes(1);
       expect(transactionMeta.txParams.from).toBe(ACCOUNT_MOCK);
-      expect(transactionMeta.chainId).toBe(MOCK_NETWORK.chainId);
+      expect(transactionMeta.chainId).toBe(MOCK_NETWORKS.goerli.chainId);
       expect(transactionMeta.deviceConfirmedOn).toBe(mockDeviceConfirmedOn);
       expect(transactionMeta.origin).toBe(mockOrigin);
       expect(transactionMeta.status).toBe(TransactionStatus.unapproved);
@@ -1456,7 +1458,7 @@ describe('TransactionController', () => {
         dappSuggestedGasFees: undefined,
         deviceConfirmedOn: undefined,
         id: expect.any(String),
-        networkClientId: MOCK_NETWORK.state.selectedNetworkClientId,
+        networkClientId: MOCK_NETWORKS.goerli.state.selectedNetworkClientId,
         origin: undefined,
         securityAlertResponse: undefined,
         sendFlowHistory: expect.any(Array),
@@ -1731,7 +1733,7 @@ describe('TransactionController', () => {
       expect(updateGasMock).toHaveBeenCalledTimes(1);
       expect(updateGasMock).toHaveBeenCalledWith({
         ethQuery: expect.any(Object),
-        chainId: MOCK_NETWORK.chainId,
+        chainId: MOCK_NETWORKS.goerli.chainId,
         // XXX: Is this right?
         isCustomNetwork: false,
         txMeta: expect.any(Object),
@@ -1777,7 +1779,7 @@ describe('TransactionController', () => {
 
         expect(getSimulationDataMock).toHaveBeenCalledTimes(1);
         expect(getSimulationDataMock).toHaveBeenCalledWith({
-          chainId: MOCK_NETWORK.chainId,
+          chainId: MOCK_NETWORKS.goerli.chainId,
           data: undefined,
           from: ACCOUNT_MOCK,
           to: ACCOUNT_MOCK,
@@ -2310,7 +2312,9 @@ describe('TransactionController', () => {
 
   describe('handleMethodData', () => {
     it('loads method data from registry', async () => {
-      const { controller } = setupController({ network: MOCK_MAINNET_NETWORK });
+      const { controller } = setupController({
+        network: MOCK_NETWORKS.mainnet,
+      });
       mockNetwork({
         networkClientConfiguration: {
           chainId: BUILT_IN_NETWORKS.mainnet.chainId,
@@ -2350,7 +2354,9 @@ describe('TransactionController', () => {
     });
 
     it('skips reading registry if already cached in state', async () => {
-      const { controller } = setupController({ network: MOCK_MAINNET_NETWORK });
+      const { controller } = setupController({
+        network: MOCK_NETWORKS.mainnet,
+      });
       mockNetwork({
         networkClientConfiguration: {
           ticker: BUILT_IN_NETWORKS.mainnet.ticker,
@@ -2593,7 +2599,7 @@ describe('TransactionController', () => {
 
     it('rejects unknown transaction', async () => {
       const { controller } = setupController({
-        network: MOCK_LINEA_GOERLI_NETWORK,
+        network: MOCK_NETWORKS.linea_goerli,
       });
 
       await controller.stopTransaction('transactionIdMock', {
@@ -2617,7 +2623,7 @@ describe('TransactionController', () => {
 
     it('publishes transaction events', async () => {
       const { controller, messenger, mockTransactionApprovalRequest } =
-        setupController({ network: MOCK_LINEA_GOERLI_NETWORK });
+        setupController({ network: MOCK_NETWORKS.linea_goerli });
 
       const approvedEventListener = jest.fn();
       const submittedEventListener = jest.fn();
@@ -2685,7 +2691,7 @@ describe('TransactionController', () => {
   describe('speedUpTransaction', () => {
     it('creates additional transaction', async () => {
       const { controller } = setupController({
-        network: MOCK_LINEA_MAINNET_NETWORK,
+        network: MOCK_NETWORKS.linea_goerli,
         options: {
           getCurrentNetworkEIP1559Compatibility: async () => false,
         },
@@ -2808,7 +2814,7 @@ describe('TransactionController', () => {
 
     it('creates additional transaction with increased gas', async () => {
       const { controller } = setupController({
-        network: MOCK_LINEA_MAINNET_NETWORK,
+        network: MOCK_NETWORKS.linea_goerli,
         options: {
           getCurrentNetworkEIP1559Compatibility: async () => false,
         },
@@ -2833,7 +2839,7 @@ describe('TransactionController', () => {
 
     it('verifies s,r and v values are correctly populated', async () => {
       const { controller } = setupController({
-        network: MOCK_LINEA_MAINNET_NETWORK,
+        network: MOCK_NETWORKS.linea_goerli,
         options: {
           sign: async (transaction) => {
             return Object.assign(transaction, {
@@ -2867,7 +2873,7 @@ describe('TransactionController', () => {
 
     it('verifies s,r and v values are correctly populated if values are zero', async () => {
       const { controller } = setupController({
-        network: MOCK_LINEA_MAINNET_NETWORK,
+        network: MOCK_NETWORKS.linea,
         options: {
           // TODO: Replace `any` with type
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2901,7 +2907,7 @@ describe('TransactionController', () => {
 
     it('creates additional transaction specifying the gasPrice', async () => {
       const { controller } = setupController({
-        network: MOCK_LINEA_MAINNET_NETWORK,
+        network: MOCK_NETWORKS.linea,
         options: {
           getCurrentNetworkEIP1559Compatibility: async () => false,
         },
@@ -2986,7 +2992,7 @@ describe('TransactionController', () => {
 
     it('publishes transaction events', async () => {
       const { controller, messenger } = setupController({
-        network: MOCK_LINEA_MAINNET_NETWORK,
+        network: MOCK_NETWORKS.linea,
       });
 
       const approvedEventListener = jest.fn();
@@ -3419,9 +3425,9 @@ describe('TransactionController', () => {
 
     it('publishes TransactionController:transactionConfirmed with transaction chainId regardless of whether it matches globally selected chainId', async () => {
       const mockGloballySelectedNetwork = {
-        ...MOCK_NETWORK,
+        ...MOCK_NETWORKS.goerli,
         state: {
-          ...MOCK_NETWORK.state,
+          ...MOCK_NETWORKS.goerli.state,
           providerConfig: {
             type: NetworkType.sepolia,
             chainId: ChainId.sepolia,
@@ -4087,7 +4093,7 @@ describe('TransactionController', () => {
         const confirmed = {
           ...TRANSACTION_META_MOCK,
           id: 'testId1',
-          chainId: MOCK_NETWORK.chainId,
+          chainId: MOCK_NETWORKS.goerli.chainId,
           hash: '0x3',
           status: TransactionStatus.confirmed,
           txParams: { ...TRANSACTION_META_MOCK.txParams, nonce: '0x1' },
@@ -4299,7 +4305,7 @@ describe('TransactionController', () => {
         gas: '0x222',
         to: ACCOUNT_2_MOCK,
         value: '0x1',
-        chainId: MOCK_NETWORK.chainId,
+        chainId: MOCK_NETWORKS.goerli.chainId,
       };
 
       await expect(
@@ -4329,7 +4335,7 @@ describe('TransactionController', () => {
         gas: '0x5208',
         to: ACCOUNT_2_MOCK,
         value: '0x0',
-        chainId: MOCK_NETWORK.chainId,
+        chainId: MOCK_NETWORKS.goerli.chainId,
       };
 
       // Send the transaction to put it in the process of being signed
@@ -4360,7 +4366,7 @@ describe('TransactionController', () => {
         gas: '0x111',
         to: ACCOUNT_2_MOCK,
         value: '0x0',
-        chainId: MOCK_NETWORK.chainId,
+        chainId: MOCK_NETWORKS.goerli.chainId,
       };
       const mockTransactionParam2 = {
         from: ACCOUNT_MOCK,
@@ -4368,7 +4374,7 @@ describe('TransactionController', () => {
         gas: '0x222',
         to: ACCOUNT_2_MOCK,
         value: '0x1',
-        chainId: MOCK_NETWORK.chainId,
+        chainId: MOCK_NETWORKS.goerli.chainId,
       };
 
       const result = await controller.approveTransactionsWithSameNonce([
@@ -4399,7 +4405,7 @@ describe('TransactionController', () => {
         gas: '0x111',
         to: ACCOUNT_2_MOCK,
         value: '0x0',
-        chainId: MOCK_NETWORK.chainId,
+        chainId: MOCK_NETWORKS.goerli.chainId,
       };
       const mockTransactionParam2 = {
         from: ACCOUNT_MOCK,
@@ -4407,7 +4413,7 @@ describe('TransactionController', () => {
         gas: '0x222',
         to: ACCOUNT_2_MOCK,
         value: '0x1',
-        chainId: MOCK_NETWORK.chainId,
+        chainId: MOCK_NETWORKS.goerli.chainId,
       };
 
       await expect(
@@ -4427,7 +4433,7 @@ describe('TransactionController', () => {
         gas: '0x111',
         to: ACCOUNT_2_MOCK,
         value: '0x0',
-        chainId: MOCK_NETWORK.chainId,
+        chainId: MOCK_NETWORKS.goerli.chainId,
       };
 
       const mockTransactionParam2 = {
@@ -4436,7 +4442,7 @@ describe('TransactionController', () => {
         gas: '0x222',
         to: ACCOUNT_2_MOCK,
         value: '0x1',
-        chainId: MOCK_NETWORK.chainId,
+        chainId: MOCK_NETWORKS.goerli.chainId,
       };
 
       await controller.approveTransactionsWithSameNonce(
@@ -4460,7 +4466,7 @@ describe('TransactionController', () => {
         gas: '0x111',
         to: ACCOUNT_2_MOCK,
         value: '0x0',
-        chainId: MOCK_NETWORK.chainId,
+        chainId: MOCK_NETWORKS.goerli.chainId,
       };
 
       const mockTransactionParam2 = {
@@ -4469,7 +4475,7 @@ describe('TransactionController', () => {
         gas: '0x222',
         to: ACCOUNT_2_MOCK,
         value: '0x1',
-        chainId: MOCK_NETWORK.chainId,
+        chainId: MOCK_NETWORKS.goerli.chainId,
       };
 
       await controller.approveTransactionsWithSameNonce([
@@ -5320,7 +5326,7 @@ describe('TransactionController', () => {
       it('returns transactions matching current network', () => {
         const transactions: TransactionMeta[] = [
           {
-            chainId: MOCK_NETWORK.chainId,
+            chainId: MOCK_NETWORKS.goerli.chainId,
             id: 'testId1',
             status: TransactionStatus.confirmed,
             time: 1,
@@ -5334,7 +5340,7 @@ describe('TransactionController', () => {
             txParams: { from: '0x2' },
           },
           {
-            chainId: MOCK_NETWORK.chainId,
+            chainId: MOCK_NETWORKS.goerli.chainId,
             id: 'testId3',
             status: TransactionStatus.submitted,
             time: 1,
@@ -5729,7 +5735,7 @@ describe('TransactionController', () => {
 
       await controller.estimateGasFee({
         transactionParams: TRANSACTION_META_MOCK.txParams,
-        chainId: CHAIN_ID_MOCK,
+        chainId: MOCK_NETWORKS.goerli.chainId,
         networkClientId: NETWORK_CLIENT_ID_MOCK,
       });
 
@@ -5738,7 +5744,7 @@ describe('TransactionController', () => {
         expect.objectContaining({
           transactionMeta: {
             txParams: TRANSACTION_META_MOCK.txParams,
-            chainId: CHAIN_ID_MOCK,
+            chainId: MOCK_NETWORKS.goerli.chainId,
             networkClientId: NETWORK_CLIENT_ID_MOCK,
           },
         }),
