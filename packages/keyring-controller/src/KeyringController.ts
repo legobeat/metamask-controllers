@@ -1037,8 +1037,10 @@ export class KeyringController extends BaseController<
             const wallet = await getWallet();
             privateKey = bytesToHex(wallet.getPrivateKey());
             break;
-          } catch(e) {
-            throw new Error('Key derivation failed - possibly wrong passphrase');
+          } catch (e) {
+            throw new Error(
+              'Key derivation failed - possibly wrong passphrase',
+            );
           }
         }
         default:
