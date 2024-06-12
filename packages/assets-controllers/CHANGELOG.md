@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [31.0.1]
+
 ### Uncategorized
 
 - chore(test): Refactor FakeBlockTracker provider injection ([#4345](https://github.com/MetaMask/core/pull/4345))
@@ -879,7 +881,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Use Ethers for AssetsContractController ([#845](https://github.com/MetaMask/core/pull/845))
 
-[Unreleased]: https://github.com/MetaMask/core/compare/@metamask/assets-controllers@31.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/core/compare/@metamask/assets-controllers@31.0.1...HEAD
+[31.0.1]: https://github.com/MetaMask/core/compare/@metamask/assets-controllers@31.0.0...@metamask/assets-controllers@31.0.1
 [31.0.0]: https://github.com/MetaMask/core/compare/@metamask/assets-controllers@30.0.0...@metamask/assets-controllers@31.0.0
 [30.0.0]: https://github.com/MetaMask/core/compare/@metamask/assets-controllers@29.0.0...@metamask/assets-controllers@30.0.0
 [29.0.0]: https://github.com/MetaMask/core/compare/@metamask/assets-controllers@28.0.0...@metamask/assets-controllers@29.0.0
