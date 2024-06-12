@@ -9,10 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [18.1.4]
 
-### Uncategorized
+### Fixed
 
 - deps(network-controller): @metamask/eth-block-tracker@^9.0.2->^9.0.3
-- chore(test): Refactor FakeBlockTracker provider injection ([#4345](https://github.com/MetaMask/core/pull/4345))
 
 ## [18.1.3]
 

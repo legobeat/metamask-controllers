@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [31.0.1]
 
-### Uncategorized
+### Fixed
 
-- chore(test): Refactor FakeBlockTracker provider injection ([#4345](https://github.com/MetaMask/core/pull/4345))
+- @metamask/ controllers version bumps
 
 ## [31.0.0]
 

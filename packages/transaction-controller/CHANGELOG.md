@@ -9,12 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [31.0.1]
 
-### Uncategorized
+### Fixed
 
 - deps(transaction-controller): @metamask/nonce-tracker@^5.0.0->^6.0.0
-- testfix(transaction-controller): Refactor provider setup to provide correct providers and tracker ([#4391](https://github.com/MetaMask/core/pull/4391))
 - fix(transaction-controller): Return global ethQuery when `!isMultichainEnabled` ([#4390](https://github.com/MetaMask/core/pull/4390))
-- chore(test): Refactor FakeBlockTracker provider injection ([#4345](https://github.com/MetaMask/core/pull/4345))
 
 ## [31.0.0]
 
