@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [31.0.1]
+
+### Uncategorized
+
+- deps(transaction-controller): @metamask/nonce-tracker@^5.0.0->^6.0.0
+- testfix(transaction-controller): Refactor provider setup to provide correct providers and tracker ([#4391](https://github.com/MetaMask/core/pull/4391))
+- fix(transaction-controller): Return global ethQuery when `!isMultichainEnabled` ([#4390](https://github.com/MetaMask/core/pull/4390))
+- chore(test): Refactor FakeBlockTracker provider injection ([#4345](https://github.com/MetaMask/core/pull/4345))
+
 ## [31.0.0]
 
 ### Changed
@@ -865,7 +874,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
     All changes listed after this point were applied to this package following the monorepo conversion.
 
-[Unreleased]: https://github.com/MetaMask/core/compare/@metamask/transaction-controller@31.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/core/compare/@metamask/transaction-controller@31.0.1...HEAD
+[31.0.1]: https://github.com/MetaMask/core/compare/@metamask/transaction-controller@31.0.0...@metamask/transaction-controller@31.0.1
 [31.0.0]: https://github.com/MetaMask/core/compare/@metamask/transaction-controller@30.0.0...@metamask/transaction-controller@31.0.0
 [30.0.0]: https://github.com/MetaMask/core/compare/@metamask/transaction-controller@29.1.0...@metamask/transaction-controller@30.0.0
 [29.1.0]: https://github.com/MetaMask/core/compare/@metamask/transaction-controller@29.0.2...@metamask/transaction-controller@29.1.0
