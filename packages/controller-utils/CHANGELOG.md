@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [10.0.1]
 
+### Fixed
+
+- @metamask/ controllers version bumps
+
 ## [10.0.0]
 
 ### Added

@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [15.0.1]
 
-### Uncategorized
+### Fixed
 
-- fix: remove mock export ([#4369](https://github.com/MetaMask/core/pull/4369))
+- Update @metamask/base-controller to ^5.0.3
 
 ## [15.0.0]
 
