@@ -42,8 +42,8 @@
   },
   "dependencies": {
     "@metamask/approval-controller": "^6.0.2",
-    "@metamask/base-controller": "^5.0.2",
-    "@metamask/controller-utils": "^10.0.0",
+    "@metamask/base-controller": "^5.0.3",
+    "@metamask/controller-utils": "^10.0.1",
     "@metamask/keyring-controller": "^16.1.0",
     "@metamask/logging-controller": "^4.0.0",
     "@metamask/message-manager": "^9.0.0",
