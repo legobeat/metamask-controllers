@@ -205,7 +205,7 @@ export class GasFeePoller {
 
     if (!ethQuery) {
       log('Provider not available', transactionMeta.id);
-      return;
+      return undefined;
     }
 
     const request: GasFeeFlowRequest = {
