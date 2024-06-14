@@ -31,7 +31,7 @@ const BLOCK_TRACKER_MOCK = {
 } as unknown as jest.Mocked<BlockTracker>;
 
 const CONTROLLER_ARGS_MOCK = {
-  blockTracker: BLOCK_TRACKER_MOCK,
+  getBlockTracker: () => BLOCK_TRACKER_MOCK,
   getCurrentAccount: () => {
     return {
       id: '58def058-d35f-49a1-a7ab-e2580565f6f5',
@@ -606,7 +606,7 @@ describe('IncomingTransactionHelper', () => {
       helper.start();
 
       expect(
-        CONTROLLER_ARGS_MOCK.blockTracker.addListener,
+        CONTROLLER_ARGS_MOCK.getBlockTracker().addListener,
       ).toHaveBeenCalledTimes(1);
     });
 
@@ -620,7 +620,7 @@ describe('IncomingTransactionHelper', () => {
       helper.start();
 
       expect(
-        CONTROLLER_ARGS_MOCK.blockTracker.addListener,
+        CONTROLLER_ARGS_MOCK.getBlockTracker().addListener,
       ).toHaveBeenCalledTimes(1);
     });
 
@@ -634,7 +634,7 @@ describe('IncomingTransactionHelper', () => {
       helper.start();
 
       expect(
-        CONTROLLER_ARGS_MOCK.blockTracker.addListener,
+        CONTROLLER_ARGS_MOCK.getBlockTracker().addListener,
       ).not.toHaveBeenCalled();
     });
 
@@ -649,7 +649,7 @@ describe('IncomingTransactionHelper', () => {
       helper.start();
 
       expect(
-        CONTROLLER_ARGS_MOCK.blockTracker.addListener,
+        CONTROLLER_ARGS_MOCK.getBlockTracker().addListener,
       ).not.toHaveBeenCalled();
     });
   });
@@ -665,7 +665,7 @@ describe('IncomingTransactionHelper', () => {
       helper.stop();
 
       expect(
-        CONTROLLER_ARGS_MOCK.blockTracker.removeListener,
+        CONTROLLER_ARGS_MOCK.getBlockTracker().removeListener,
       ).toHaveBeenCalledTimes(1);
     });
   });

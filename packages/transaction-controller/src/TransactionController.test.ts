@@ -565,8 +565,6 @@ describe('TransactionController', () => {
       ...network.state,
     };
     const provider = network.provider ?? new FakeProvider();
-    const blockTracker =
-      network.blockTracker ?? new FakeBlockTracker({ provider });
     const onNetworkDidChangeListeners: ((state: NetworkState) => void)[] = [];
     const changeNetwork = ({
       selectedNetworkClientId,
@@ -603,11 +601,14 @@ describe('TransactionController', () => {
     );
 
     const { messenger: givenRestrictedMessenger, ...otherOptions } = {
-      blockTracker,
       disableHistory: false,
       disableSendFlowHistory: false,
       disableSwaps: false,
       getCurrentNetworkEIP1559Compatibility: async () => false,
+      getGlobalProviderAndBlockTracker: () => ({
+        provider: network.provider,
+        blockTracker: network.blockTracker,
+      }),
       getNetworkState: () => networkState,
       // TODO: Replace with a real type
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -804,6 +805,23 @@ describe('TransactionController', () => {
       return pendingTransactionTrackerMock;
     });
 
+    multichainTrackingHelperClassMock.mockImplementation(
+      ({ getGlobalProviderAndBlockTracker }) => {
+        multichainTrackingHelperMock = {
+          getEthQuery: jest.fn().mockImplementation(() => {
+            return new EthQuery(
+              getGlobalProviderAndBlockTracker()?.provider as Provider,
+            );
+          }),
+          checkForPendingTransactionAndStartPolling: jest.fn(),
+          getNonceLock: getNonceLockSpy,
+          initialize: jest.fn(),
+          has: jest.fn().mockReturnValue(false),
+        } as unknown as jest.Mocked<MultichainTrackingHelper>;
+        return multichainTrackingHelperMock;
+      },
+    );
+    /*
     multichainTrackingHelperClassMock.mockImplementation(({ provider }) => {
       multichainTrackingHelperMock = {
         getEthQuery: jest.fn().mockImplementation(() => {
@@ -819,6 +837,7 @@ describe('TransactionController', () => {
       } as unknown as jest.Mocked<MultichainTrackingHelper>;
       return multichainTrackingHelperMock;
     });
+    */
 
     defaultGasFeeFlowClassMock.mockImplementation(() => {
       defaultGasFeeFlowMock = {
@@ -1430,6 +1449,8 @@ describe('TransactionController', () => {
         from: ACCOUNT_MOCK,
         to: ACCOUNT_MOCK,
       });
+
+      await flushPromises();
 
       const expectedInitialSnapshot = {
         actionId: undefined,

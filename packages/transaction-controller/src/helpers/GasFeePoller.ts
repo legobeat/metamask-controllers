@@ -203,6 +203,11 @@ export class GasFeePoller {
       );
     }
 
+    if (!ethQuery) {
+      log('Provider not available', transactionMeta.id);
+      return undefined;
+    }
+
     const request: GasFeeFlowRequest = {
       ethQuery,
       gasFeeControllerData,
