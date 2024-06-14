@@ -6,7 +6,6 @@ import type {
   BlockTracker,
   Provider,
   NetworkControllerStateChangeEvent,
-  ProviderConfig,
 } from '@metamask/network-controller';
 import type { NonceLock, NonceTracker } from '@metamask/nonce-tracker';
 import type { Hex } from '@metamask/utils';
@@ -37,7 +36,6 @@ export type MultichainTrackingHelperOptions = {
   getGlobalProviderAndBlockTracker: () =>
     | { provider: Provider; blockTracker: BlockTracker }
     | undefined;
-  getGlobalProviderConfig: () => ProviderConfig | undefined;
   getNetworkClientById: NetworkController['getNetworkClientById'];
   getNetworkClientRegistry: NetworkController['getNetworkClientRegistry'];
 
@@ -77,8 +75,6 @@ export class MultichainTrackingHelper {
   readonly #incomingTransactionOptions: IncomingTransactionOptions;
 
   readonly #findNetworkClientIdByChainId: NetworkController['findNetworkClientIdByChainId'];
-
-  readonly #getGlobalProviderConfig: () => ProviderConfig | undefined;
 
   readonly #getGlobalProviderAndBlockTracker: () =>
     | { provider: Provider; blockTracker: BlockTracker }
@@ -134,7 +130,6 @@ export class MultichainTrackingHelper {
     isMultichainEnabled,
     incomingTransactionOptions,
     findNetworkClientIdByChainId,
-    getGlobalProviderConfig,
     getGlobalProviderAndBlockTracker,
     getNetworkClientById,
     getNetworkClientRegistry,
@@ -150,7 +145,6 @@ export class MultichainTrackingHelper {
 
     this.#findNetworkClientIdByChainId = findNetworkClientIdByChainId;
     this.#getGlobalProviderAndBlockTracker = getGlobalProviderAndBlockTracker;
-    this.#getGlobalProviderConfig = getGlobalProviderConfig;
     this.#getNetworkClientById = getNetworkClientById;
     this.#getNetworkClientRegistry = getNetworkClientRegistry;
 
@@ -196,6 +190,9 @@ export class MultichainTrackingHelper {
     networkClientId?: NetworkClientId;
     chainId?: Hex;
   } = {}): EthQuery {
+    if (!this.#isMultichainEnabled) {
+      return new EthQuery(this.getProvider());
+    }
     return new EthQuery(this.getProvider({ networkClientId, chainId }));
   }
 

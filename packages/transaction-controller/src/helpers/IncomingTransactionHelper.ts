@@ -1,3 +1,4 @@
+import type { AccountsController } from '@metamask/accounts-controller';
 import type { BlockTracker } from '@metamask/network-controller';
 import type { Hex } from '@metamask/utils';
 import { Mutex } from 'async-mutex';
@@ -39,7 +40,9 @@ export class IncomingTransactionHelper {
 
   #getChainId: () => Hex | undefined;
 
-  #getCurrentAccount: () => string;
+  #getCurrentAccount: () => ReturnType<
+    AccountsController['getSelectedAccount']
+  >;
 
   #getLastFetchedBlockNumbers: () => Record<string, number>;
 
@@ -75,7 +78,9 @@ export class IncomingTransactionHelper {
   }: {
     getBlockTracker: () => BlockTracker | undefined;
     getChainId: () => Hex | undefined;
-    getCurrentAccount: () => string;
+    getCurrentAccount: () => ReturnType<
+      AccountsController['getSelectedAccount']
+    >;
     getLastFetchedBlockNumbers: () => Record<string, number>;
     getLocalTransactions?: () => TransactionMeta[];
     isEnabled?: () => boolean;
@@ -161,17 +166,17 @@ export class IncomingTransactionHelper {
       const additionalLastFetchedKeys =
         this.#remoteTransactionSource.getLastBlockVariations?.() ?? [];
 
-      const fromBlock = this.#getFromBlock(latestBlockNumber, chainId);
-      const address = this.#getCurrentAccount();
-      const currentChainId = chainId;
+      const account = this.#getCurrentAccount();
+      const currentChainId = this.#getChainId();
+      const fromBlock = this.#getFromBlock(latestBlockNumber, currentChainId || chainId);
 
       let remoteTransactions = [];
 
       try {
         remoteTransactions =
           await this.#remoteTransactionSource.fetchTransactions({
-            address,
-            currentChainId,
+            address: account.address,
+            currentChainId: currentChainId || chainId,
             fromBlock,
             limit: this.#transactionLimit,
           });
@@ -182,8 +187,9 @@ export class IncomingTransactionHelper {
         return;
       }
       if (!this.#updateTransactions) {
+        const address = account.address.toLowerCase();
         remoteTransactions = remoteTransactions.filter(
-          (tx) => tx.txParams.to?.toLowerCase() === address.toLowerCase(),
+          (tx) => tx.txParams.to?.toLowerCase() === address,
         );
       }
 
@@ -219,7 +225,7 @@ export class IncomingTransactionHelper {
       this.#updateLastFetchedBlockNumber(
         remoteTransactions,
         additionalLastFetchedKeys,
-        currentChainId,
+        currentChainId || chainId,
       );
     } finally {
       releaseLock();
@@ -326,7 +332,7 @@ export class IncomingTransactionHelper {
   }
 
   #getBlockNumberKey(additionalKeys: string[], chainId: Hex): string {
-    const currentAccount = this.#getCurrentAccount()?.toLowerCase();
+    const currentAccount = this.#getCurrentAccount()?.address.toLowerCase();
 
     return [chainId, currentAccount, ...additionalKeys].join('#');
   }

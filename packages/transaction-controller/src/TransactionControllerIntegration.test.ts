@@ -1,4 +1,5 @@
 import type { TypedTransaction } from '@ethereumjs/tx';
+import type { AccountsControllerGetSelectedAccountAction } from '@metamask/accounts-controller';
 import type {
   ApprovalControllerActions,
   ApprovalControllerEvents,
@@ -11,6 +12,8 @@ import {
   InfuraNetworkType,
   NetworkType,
 } from '@metamask/controller-utils';
+import type { InternalAccount } from '@metamask/keyring-api';
+import { EthAccountType, EthMethod } from '@metamask/keyring-api';
 import {
   NetworkController,
   NetworkClientType,
@@ -25,6 +28,7 @@ import assert from 'assert';
 import nock from 'nock';
 import type { SinonFakeTimers } from 'sinon';
 import { useFakeTimers } from 'sinon';
+import { v4 } from 'uuid';
 
 import { advanceTime } from '../../../tests/helpers';
 import { mockNetwork } from '../../../tests/mock-network';
@@ -59,13 +63,53 @@ import * as etherscanUtils from './utils/etherscan';
 type UnrestrictedControllerMessenger = ControllerMessenger<
   | NetworkControllerActions
   | ApprovalControllerActions
-  | TransactionControllerActions,
+  | TransactionControllerActions
+  | AccountsControllerGetSelectedAccountAction,
   | NetworkControllerEvents
   | ApprovalControllerEvents
   | TransactionControllerEvents
 >;
 
+const createMockInternalAccount = ({
+  id = v4(),
+  address = '0x2990079bcdee240329a520d2444386fc119da21a',
+  name = 'Account 1',
+  importTime = Date.now(),
+  lastSelected = Date.now(),
+}: {
+  id?: string;
+  address?: string;
+  name?: string;
+  importTime?: number;
+  lastSelected?: number;
+} = {}): InternalAccount => {
+  return {
+    id,
+    address,
+    options: {},
+    methods: [
+      EthMethod.PersonalSign,
+      EthMethod.Sign,
+      EthMethod.SignTransaction,
+      EthMethod.SignTypedDataV1,
+      EthMethod.SignTypedDataV3,
+      EthMethod.SignTypedDataV4,
+    ],
+    type: EthAccountType.Eoa,
+    metadata: {
+      name,
+      keyring: { type: 'HD Key Tree' },
+      importTime,
+      lastSelected,
+    },
+  } as InternalAccount;
+};
+
 const ACCOUNT_MOCK = '0x6bf137f335ea1b8f193b8f6ea92561a60d23a207';
+const INTERNAL_ACCOUNT_MOCK = createMockInternalAccount({
+  address: ACCOUNT_MOCK,
+});
+
 const ACCOUNT_2_MOCK = '0x08f137f335ea1b8f193b8f6ea92561a60d23a211';
 const ACCOUNT_3_MOCK = '0xe688b84b23f322a994a53dbf8e15fa82cdb71127';
 const infuraProjectId = 'fake-infura-project-id';
@@ -100,6 +144,11 @@ const setupController = async (
   givenOptions: Partial<
     ConstructorParameters<typeof TransactionController>[0]
   > = {},
+  mockData: {
+    selectedAccount?: InternalAccount;
+  } = {
+    selectedAccount: createMockInternalAccount({ address: '0xdeadbeef' }),
+  },
 ) => {
   // Mainnet network must be mocked for NetworkController instantiation
   mockNetwork({
@@ -147,9 +196,19 @@ const setupController = async (
       'ApprovalController:addRequest',
       'NetworkController:getNetworkClientById',
       'NetworkController:findNetworkClientIdByChainId',
+      'AccountsController:getSelectedAccount',
     ],
     allowedEvents: ['NetworkController:stateChange'],
   });
+
+  const mockGetSelectedAccount = jest
+    .fn()
+    .mockReturnValue(mockData.selectedAccount);
+
+  unrestrictedMessenger.registerActionHandler(
+    'AccountsController:getSelectedAccount',
+    mockGetSelectedAccount,
+  );
 
   const options: TransactionControllerOptions = {
     disableHistory: false,
@@ -171,7 +230,6 @@ const setupController = async (
     getNetworkClientRegistry:
       networkController.getNetworkClientRegistry.bind(networkController),
     getPermittedAccounts: async () => [ACCOUNT_MOCK],
-    getSelectedAddress: () => '0xdeadbeef',
     hooks: {},
     isMultichainEnabled: false,
     messenger,
@@ -190,6 +248,7 @@ const setupController = async (
     approvalController,
     networkController,
     messenger,
+    mockGetSelectedAccount,
   };
 };
 
@@ -685,11 +744,13 @@ describe('TransactionController Integration', () => {
         });
 
         const { approvalController, networkController, transactionController } =
-          await setupController({
-            isMultichainEnabled: true,
-            getPermittedAccounts: async () => [ACCOUNT_MOCK],
-            getSelectedAddress: () => ACCOUNT_MOCK,
-          });
+          await setupController(
+            {
+              isMultichainEnabled: true,
+              getPermittedAccounts: async () => [ACCOUNT_MOCK],
+            },
+            { selectedAccount: INTERNAL_ACCOUNT_MOCK },
+          );
         const otherNetworkClientIdOnGoerli =
           await networkController.upsertNetworkConfiguration(
             {
@@ -766,11 +827,13 @@ describe('TransactionController Integration', () => {
           ],
         });
         const { approvalController, transactionController } =
-          await setupController({
-            isMultichainEnabled: true,
-            getPermittedAccounts: async () => [ACCOUNT_MOCK],
-            getSelectedAddress: () => ACCOUNT_MOCK,
-          });
+          await setupController(
+            {
+              isMultichainEnabled: true,
+              getPermittedAccounts: async () => [ACCOUNT_MOCK],
+            },
+            { selectedAccount: INTERNAL_ACCOUNT_MOCK },
+          );
 
         const addTx1 = await transactionController.addTransaction(
           {
@@ -1026,12 +1089,17 @@ describe('TransactionController Integration', () => {
       });
 
       const selectedAddress = ETHERSCAN_TRANSACTION_BASE_MOCK.to;
+      const selectedAccountMock = createMockInternalAccount({
+        address: selectedAddress,
+      });
 
       const { networkController, transactionController } =
-        await setupController({
-          getSelectedAddress: () => selectedAddress,
-          isMultichainEnabled: true,
-        });
+        await setupController(
+          {
+            isMultichainEnabled: true,
+          },
+          { selectedAccount: selectedAccountMock },
+        );
 
       const expectedLastFetchedBlockNumbers: Record<string, number> = {};
       const expectedTransactions: Partial<TransactionMeta>[] = [];
@@ -1059,6 +1127,8 @@ describe('TransactionController Integration', () => {
           ]);
 
           expectedLastFetchedBlockNumbers[
+            // TODO: Either fix this lint violation or explain why it's necessary to ignore.
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             `${config.chainId}#${selectedAddress}#normal`
           ] = parseInt(ETHERSCAN_TRANSACTION_BASE_MOCK.blockNumber, 10);
           expectedTransactions.push({
@@ -1095,6 +1165,9 @@ describe('TransactionController Integration', () => {
 
     it('should start the global incoming transaction helper when no networkClientIds provided', async () => {
       const selectedAddress = ETHERSCAN_TRANSACTION_BASE_MOCK.to;
+      const selectedAccountMock = createMockInternalAccount({
+        address: selectedAddress,
+      });
 
       mockNetwork({
         networkClientConfiguration: buildInfuraNetworkClientConfiguration(
@@ -1111,9 +1184,10 @@ describe('TransactionController Integration', () => {
         )
         .reply(200, ETHERSCAN_TRANSACTION_RESPONSE_MOCK);
 
-      const { transactionController } = await setupController({
-        getSelectedAddress: () => selectedAddress,
-      });
+      const { transactionController } = await setupController(
+        {},
+        { selectedAccount: selectedAccountMock },
+      );
 
       transactionController.startIncomingTransactionPolling();
 
@@ -1200,12 +1274,17 @@ describe('TransactionController Integration', () => {
         });
 
         const selectedAddress = ETHERSCAN_TRANSACTION_BASE_MOCK.to;
+        const selectedAccountMock = createMockInternalAccount({
+          address: selectedAddress,
+        });
 
         const { networkController, transactionController } =
-          await setupController({
-            getSelectedAddress: () => selectedAddress,
-            isMultichainEnabled: true,
-          });
+          await setupController(
+            {
+              isMultichainEnabled: true,
+            },
+            { selectedAccount: selectedAccountMock },
+          );
 
         const otherGoerliClientNetworkClientId =
           await networkController.upsertNetworkConfiguration(
@@ -1296,11 +1375,12 @@ describe('TransactionController Integration', () => {
   describe('stopIncomingTransactionPolling', () => {
     it('should not poll for new incoming transactions for the given networkClientId', async () => {
       const selectedAddress = ETHERSCAN_TRANSACTION_BASE_MOCK.to;
+      const selectedAccountMock = createMockInternalAccount({
+        address: selectedAddress,
+      });
 
       const { networkController, transactionController } =
-        await setupController({
-          getSelectedAddress: () => selectedAddress,
-        });
+        await setupController({}, { selectedAccount: selectedAccountMock });
 
       const networkClients = networkController.getNetworkClientRegistry();
       const networkClientIds = Object.keys(networkClients);
@@ -1340,10 +1420,14 @@ describe('TransactionController Integration', () => {
 
     it('should stop the global incoming transaction helper when no networkClientIds provided', async () => {
       const selectedAddress = ETHERSCAN_TRANSACTION_BASE_MOCK.to;
-
-      const { transactionController } = await setupController({
-        getSelectedAddress: () => selectedAddress,
+      const selectedAccountMock = createMockInternalAccount({
+        address: selectedAddress,
       });
+
+      const { transactionController } = await setupController(
+        {},
+        { selectedAccount: selectedAccountMock },
+      );
 
       mockNetwork({
         networkClientConfiguration: buildInfuraNetworkClientConfiguration(
@@ -1376,11 +1460,12 @@ describe('TransactionController Integration', () => {
   describe('stopAllIncomingTransactionPolling', () => {
     it('should not poll for incoming transactions on any network client', async () => {
       const selectedAddress = ETHERSCAN_TRANSACTION_BASE_MOCK.to;
+      const selectedAccountMock = createMockInternalAccount({
+        address: selectedAddress,
+      });
 
       const { networkController, transactionController } =
-        await setupController({
-          getSelectedAddress: () => selectedAddress,
-        });
+        await setupController({}, { selectedAccount: selectedAccountMock });
 
       const networkClients = networkController.getNetworkClientRegistry();
       const networkClientIds = Object.keys(networkClients);
@@ -1420,12 +1505,17 @@ describe('TransactionController Integration', () => {
   describe('updateIncomingTransactions', () => {
     it('should add incoming transactions to state with the correct chainId for the given networkClientId without waiting for the next block', async () => {
       const selectedAddress = ETHERSCAN_TRANSACTION_BASE_MOCK.to;
+      const selectedAccountMock = createMockInternalAccount({
+        address: selectedAddress,
+      });
 
       const { networkController, transactionController } =
-        await setupController({
-          getSelectedAddress: () => selectedAddress,
-          isMultichainEnabled: true,
-        });
+        await setupController(
+          {
+            isMultichainEnabled: true,
+          },
+          { selectedAccount: selectedAccountMock },
+        );
 
       const expectedLastFetchedBlockNumbers: Record<string, number> = {};
       const expectedTransactions: Partial<TransactionMeta>[] = [];
@@ -1445,9 +1535,13 @@ describe('TransactionController Integration', () => {
             )
             .reply(200, ETHERSCAN_TRANSACTION_RESPONSE_MOCK);
 
+          // TODO: Either fix this lint violation or explain why it's necessary to ignore.
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises
           transactionController.updateIncomingTransactions([networkClientId]);
 
           expectedLastFetchedBlockNumbers[
+            // TODO: Either fix this lint violation or explain why it's necessary to ignore.
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             `${config.chainId}#${selectedAddress}#normal`
           ] = parseInt(ETHERSCAN_TRANSACTION_BASE_MOCK.blockNumber, 10);
           expectedTransactions.push({
@@ -1486,10 +1580,14 @@ describe('TransactionController Integration', () => {
 
     it('should update the incoming transactions for the gloablly selected network when no networkClientIds provided', async () => {
       const selectedAddress = ETHERSCAN_TRANSACTION_BASE_MOCK.to;
-
-      const { transactionController } = await setupController({
-        getSelectedAddress: () => selectedAddress,
+      const selectedAccountMock = createMockInternalAccount({
+        address: selectedAddress,
       });
+
+      const { transactionController } = await setupController(
+        {},
+        { selectedAccount: selectedAccountMock },
+      );
 
       mockNetwork({
         networkClientConfiguration: buildInfuraNetworkClientConfiguration(
@@ -1503,6 +1601,8 @@ describe('TransactionController Integration', () => {
         )
         .reply(200, ETHERSCAN_TRANSACTION_RESPONSE_MOCK);
 
+      // TODO: Either fix this lint violation or explain why it's necessary to ignore.
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       transactionController.updateIncomingTransactions();
 
       // we have to wait for the mutex to be released after the 5 second API rate limit timer
@@ -1611,6 +1711,8 @@ describe('TransactionController Integration', () => {
             networkClientId,
           );
           const delay = () =>
+            // TODO: Either fix this lint violation or explain why it's necessary to ignore.
+            // eslint-disable-next-line @typescript-eslint/no-misused-promises
             new Promise<null>(async (resolve) => {
               await advanceTime({ clock, duration: 100 });
               resolve(null);
@@ -1622,6 +1724,8 @@ describe('TransactionController Integration', () => {
           ]);
           expect(secondNonceLockIfAcquired).toBeNull();
 
+          // TODO: Either fix this lint violation or explain why it's necessary to ignore.
+          // eslint-disable-next-line @typescript-eslint/await-thenable
           await firstNonceLock.releaseLock();
           await advanceTime({ clock, duration: 1 });
 
@@ -1680,6 +1784,8 @@ describe('TransactionController Integration', () => {
         otherNetworkClientIdOnGoerli,
       );
       const delay = () =>
+        // TODO: Either fix this lint violation or explain why it's necessary to ignore.
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
         new Promise<null>(async (resolve) => {
           await advanceTime({ clock, duration: 100 });
           resolve(null);
@@ -1691,6 +1797,8 @@ describe('TransactionController Integration', () => {
       ]);
       expect(secondNonceLockIfAcquired).toBeNull();
 
+      // TODO: Either fix this lint violation or explain why it's necessary to ignore.
+      // eslint-disable-next-line @typescript-eslint/await-thenable
       await firstNonceLock.releaseLock();
       await advanceTime({ clock, duration: 1 });
 
@@ -1847,6 +1955,8 @@ describe('TransactionController Integration', () => {
       const secondNonceLockPromise =
         transactionController.getNonceLock(ACCOUNT_MOCK);
       const delay = () =>
+        // TODO: Either fix this lint violation or explain why it's necessary to ignore.
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
         new Promise<null>(async (resolve) => {
           await advanceTime({ clock, duration: 100 });
           resolve(null);
@@ -1858,6 +1968,8 @@ describe('TransactionController Integration', () => {
       ]);
       expect(secondNonceLockIfAcquired).toBeNull();
 
+      // TODO: Either fix this lint violation or explain why it's necessary to ignore.
+      // eslint-disable-next-line @typescript-eslint/await-thenable
       await firstNonceLock.releaseLock();
 
       secondNonceLockIfAcquired = await Promise.race([

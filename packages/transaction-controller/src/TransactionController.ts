@@ -2,6 +2,7 @@ import { Hardfork, Common, type ChainConfig } from '@ethereumjs/common';
 import type { TypedTransaction } from '@ethereumjs/tx';
 import { TransactionFactory } from '@ethereumjs/tx';
 import { bufferToHex } from '@ethereumjs/util';
+import type { AccountsControllerGetSelectedAccountAction } from '@metamask/accounts-controller';
 import type {
   AcceptResultCallbacks,
   AddApprovalRequest,
@@ -18,7 +19,7 @@ import {
   ApprovalType,
   ORIGIN_METAMASK,
   convertHexToDecimal,
-  NetworkType,
+  isInfuraNetworkType,
 } from '@metamask/controller-utils';
 import type { PollingBlockTracker } from '@metamask/eth-block-tracker';
 import EthQuery from '@metamask/eth-query';
@@ -37,11 +38,11 @@ import type {
   NetworkControllerGetNetworkClientByIdAction,
 } from '@metamask/network-controller';
 import { NetworkClientType } from '@metamask/network-controller';
-import { NonceTracker } from '@metamask/nonce-tracker';
 import type {
   NonceLock,
   Transaction as NonceTrackerTransaction,
 } from '@metamask/nonce-tracker';
+import { NonceTracker } from '@metamask/nonce-tracker';
 import { errorCodes, rpcErrors, providerErrors } from '@metamask/rpc-errors';
 import type { Hex } from '@metamask/utils';
 import { add0x } from '@metamask/utils';
@@ -248,7 +249,6 @@ export type PendingTransactionOptions = {
 /**
  * TransactionController constructor options.
  *
- * @property blockTracker - The block tracker used to poll for new blocks data.
  * @property disableHistory - Whether to disable storing history in transaction metadata.
  * @property disableSendFlowHistory - Explicitly disable transaction metadata history.
  * @property disableSwaps - Whether to disable additional processing on swaps transactions.
@@ -267,7 +267,6 @@ export type PendingTransactionOptions = {
  * @property messenger - The controller messenger.
  * @property onNetworkStateChange - Allows subscribing to network controller state changes.
  * @property pendingTransactions - Configuration options for pending transaction support.
- * @property provider - The provider used to create the underlying EthQuery instance.
  * @property securityProviderRequest - A function for verifying a transaction, whether it is malicious or not.
  * @property sign - Function used to sign transactions.
  * @property state - Initial state to set on this controller.
@@ -281,7 +280,6 @@ export type PendingTransactionOptions = {
  * @property hooks.publish - Alternate logic to publish a transaction.
  */
 export type TransactionControllerOptions = {
-  blockTracker: BlockTracker;
   disableHistory: boolean;
   disableSendFlowHistory: boolean;
   disableSwaps: boolean;
@@ -301,14 +299,12 @@ export type TransactionControllerOptions = {
   getNetworkState: () => NetworkState;
   getPermittedAccounts: (origin?: string) => Promise<string[]>;
   getSavedGasFees?: (chainId: Hex) => SavedGasFees | undefined;
-  getSelectedAddress: () => string;
   incomingTransactions?: IncomingTransactionOptions;
   isMultichainEnabled: boolean;
   isSimulationEnabled?: () => boolean;
   messenger: TransactionControllerMessenger;
   onNetworkStateChange: (listener: (state: NetworkState) => void) => void;
   pendingTransactions?: PendingTransactionOptions;
-  provider: Provider;
   securityProviderRequest?: SecurityProviderRequest;
   sign?: (
     transaction: TypedTransaction,
@@ -348,7 +344,8 @@ const controllerName = 'TransactionController';
 export type AllowedActions =
   | AddApprovalRequest
   | NetworkControllerFindNetworkClientIdByChainIdAction
-  | NetworkControllerGetNetworkClientByIdAction;
+  | NetworkControllerGetNetworkClientByIdAction
+  | AccountsControllerGetSelectedAccountAction;
 
 /**
  * The external events available to the {@link TransactionController}.
@@ -614,8 +611,6 @@ export class TransactionController extends BaseController<
 
   private readonly getPermittedAccounts: (origin?: string) => Promise<string[]>;
 
-  private readonly getSelectedAddress: () => string;
-
   private readonly getExternalPendingTransactions: (
     address: string,
     chainId?: string,
@@ -744,7 +739,6 @@ export class TransactionController extends BaseController<
    * @param options.getNetworkState - Gets the state of the network controller.
    * @param options.getPermittedAccounts - Get accounts that a given origin has permissions for.
    * @param options.getSavedGasFees - Gets the saved gas fee config.
-   * @param options.getSelectedAddress - Gets the address of the currently selected account.
    * @param options.incomingTransactions - Configuration options for incoming transaction support.
    * @param options.isMultichainEnabled - Enable multichain support.
    * @param options.isSimulationEnabled - Whether new transactions will be automatically simulated.
@@ -771,7 +765,6 @@ export class TransactionController extends BaseController<
     getNetworkState,
     getPermittedAccounts,
     getSavedGasFees,
-    getSelectedAddress,
     incomingTransactions = {},
     isMultichainEnabled = false,
     isSimulationEnabled,
@@ -809,7 +802,6 @@ export class TransactionController extends BaseController<
     this.getGasFeeEstimates =
       getGasFeeEstimates || (() => Promise.resolve({} as GasFeeState));
     this.getPermittedAccounts = getPermittedAccounts;
-    this.getSelectedAddress = getSelectedAddress;
     this.getExternalPendingTransactions =
       getExternalPendingTransactions ?? (() => []);
     this.securityProviderRequest = securityProviderRequest;
@@ -844,9 +836,8 @@ export class TransactionController extends BaseController<
       isMultichainEnabled,
       incomingTransactionOptions: incomingTransactions,
       getGlobalProviderAndBlockTracker,
-      getGlobalProviderConfig: () => getNetworkState()?.providerConfig,
-      findNetworkClientIdByChainId,
-      getNetworkClientById: ((networkClientId: NetworkClientId) => {
+        findNetworkClientIdByChainId,
+        getNetworkClientById: ((networkClientId: NetworkClientId) => {
         return this.messagingSystem.call(
           `NetworkController:getNetworkClientById`,
           networkClientId,
@@ -1046,7 +1037,7 @@ export class TransactionController extends BaseController<
     if (origin) {
       await validateTransactionOrigin(
         await this.getPermittedAccounts(origin),
-        this.getSelectedAddress(),
+        this.#getSelectedAccount().address,
         txParams.from,
         origin,
       );
@@ -1606,10 +1597,9 @@ export class TransactionController extends BaseController<
   updateTransaction(transactionMeta: TransactionMeta, note: string) {
     const { id: transactionId } = transactionMeta;
 
-    this.#updateTransactionInternal(
-      { transactionId, note, skipHistory: this.isHistoryDisabled },
-      () => ({ ...transactionMeta }),
-    );
+    this.#updateTransactionInternal({ transactionId, note }, () => ({
+      ...transactionMeta,
+    }));
   }
 
   /**
@@ -2845,6 +2835,8 @@ export class TransactionController extends BaseController<
       updatedTransactionMeta,
     );
     this.#internalEvents.emit(
+      // TODO: Either fix this lint violation or explain why it's necessary to ignore.
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `${transactionMeta.id}:finished`,
       updatedTransactionMeta,
     );
@@ -2880,6 +2872,8 @@ export class TransactionController extends BaseController<
         const { chainId, status, txParams, time } = tx;
 
         if (txParams) {
+          // TODO: Either fix this lint violation or explain why it's necessary to ignore.
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           const key = `${String(txParams.nonce)}-${convertHexToDecimal(
             chainId,
           )}-${new Date(time).toDateString()}`;
@@ -3468,7 +3462,7 @@ export class TransactionController extends BaseController<
     const incomingTransactionHelper = new IncomingTransactionHelper({
       getBlockTracker,
       getChainId,
-      getCurrentAccount: this.getSelectedAddress,
+      getCurrentAccount: () => this.#getSelectedAccount(),
       getLastFetchedBlockNumbers: () => this.state.lastFetchedBlockNumbers,
       isEnabled: this.#incomingTransactionOptions.isEnabled,
       queryEntireHistory: this.#incomingTransactionOptions.queryEntireHistory,
@@ -3685,7 +3679,9 @@ export class TransactionController extends BaseController<
       updatedTransactionParams =
         this.#checkIfTransactionParamsUpdated(transactionMeta);
 
-      if (skipHistory !== true) {
+      const shouldSkipHistory = this.isHistoryDisabled || skipHistory;
+
+      if (!shouldSkipHistory) {
         transactionMeta = updateTransactionHistory(
           transactionMeta,
           note ?? 'Transaction updated',
@@ -3780,6 +3776,7 @@ export class TransactionController extends BaseController<
 
     const finalTransactionMeta = this.getTransaction(transactionId);
 
+    /* istanbul ignore if */
     if (!finalTransactionMeta) {
       log(
         'Cannot update simulation data as transaction not found',
@@ -3861,14 +3858,19 @@ export class TransactionController extends BaseController<
   }
 
   #getGlobalChainId() {
-    return this.getNetworkState().providerConfig.chainId;
+    return this.messagingSystem.call(
+      `NetworkController:getNetworkClientById`,
+      this.getNetworkState().selectedNetworkClientId,
+    ).configuration.chainId;
   }
 
   #isCustomNetwork(networkClientId?: NetworkClientId) {
     const globalNetworkClientId = this.#getGlobalNetworkClientId();
 
     if (!networkClientId || networkClientId === globalNetworkClientId) {
-      return this.getNetworkState().providerConfig.type === NetworkType.rpc;
+      return !isInfuraNetworkType(
+        this.getNetworkState().selectedNetworkClientId,
+      );
     }
 
     return (
@@ -3906,5 +3908,9 @@ export class TransactionController extends BaseController<
     }
 
     return chainId;
+  }
+
+  #getSelectedAccount() {
+    return this.messagingSystem.call('AccountsController:getSelectedAccount');
   }
 }
