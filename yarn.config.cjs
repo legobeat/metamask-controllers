@@ -714,6 +714,36 @@ function expectControllerDependenciesListedAsPeerDependencies(
   }
 }
 
+const ALLOWED_INCONSISTENT_DEPENDENCIES = Object.entries({
+  '@metamask/rpc-errors': ['^7.0.0'],
+});
+
+/**
+ * Filter out dependency ranges which are not to be considered in `expectConsistentDependenciesAndDevDependencies`.
+ *
+ * @param {string} dependencyIdent - The dependency being filtered for
+ * @param {Map<string, Dependency>} dependenciesByRange - Dependencies by range
+ * @returns {Map<string, Dependency>} The resulting map.
+ */
+function getInconsistentDependenciesAndDevDependencies(
+  dependencyIdent,
+  dependenciesByRange,
+) {
+  for (const [
+    allowedPackage,
+    ignoredRange,
+  ] of ALLOWED_INCONSISTENT_DEPENDENCIES) {
+    if (allowedPackage === dependencyIdent) {
+      return new Map(
+        Object.entries(dependenciesByRange).filter(
+          ([range]) => !ignoredRange.includes(range),
+        ),
+      );
+    }
+  }
+  return dependenciesByRange;
+}
+
 /**
  * Expect that all version ranges in `dependencies` and `devDependencies` for
  * the same dependency across the entire monorepo are the same. As it is
@@ -732,18 +762,24 @@ function expectConsistentDependenciesAndDevDependencies(Yarn) {
     dependencyIdent,
     dependenciesByRange,
   ] of nonPeerDependenciesByIdent.entries()) {
-    const dependencyRanges = [...dependenciesByRange.keys()].sort();
-    if (dependenciesByRange.size > 1) {
-      for (const dependencies of dependenciesByRange.values()) {
-        for (const dependency of dependencies) {
-          dependency.error(
-            `Expected version range for ${dependencyIdent} (in ${
-              dependency.type
-            }) to be consistent across monorepo. Pick one: ${inspect(
-              dependencyRanges,
-            )}`,
-          );
-        }
+    if (dependenciesByRange.size <= 1) {
+      continue;
+    }
+    const dependenciesToConsider =
+      getInconsistentDependenciesAndDevDependencies(
+        dependencyIdent,
+        dependenciesByRange,
+      );
+    const dependencyRanges = [...dependenciesToConsider.keys()].sort();
+    for (const dependencies of dependenciesToConsider.values()) {
+      for (const dependency of dependencies) {
+        dependency.error(
+          `Expected version range for ${dependencyIdent} (in ${
+            dependency.type
+          }) to be consistent across monorepo. Pick one: ${inspect(
+            dependencyRanges,
+          )}`,
+        );
       }
     }
   }
